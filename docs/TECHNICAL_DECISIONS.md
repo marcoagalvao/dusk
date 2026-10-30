@@ -278,6 +278,39 @@ Diálogo próprio "Registrar acompanhamento" (`follow-up-dialog.tsx`) que reapro
 **Alternativas consideradas:**
 Reutilizar o modal de andamento com flags de modo (mais campos irrelevantes e lógica condicional); exigir reabrir a tarefa (muda o status de algo que já foi entregue).
 
+## Blocos do painel abrem as próprias tarefas contadas
+
+**Contexto:**
+Cada bloco do relatório conta de um jeito: "Concluídas por projeto" inclui arquivadas e agrupa em "Outros", o tempo em aberto usa faixas de idade, as pessoas juntam grafias diferentes e o calendário mistura prazo e revisão. Um filtro para cada caso repetiria essas regras em dois lugares, e o número poderia divergir da lista.
+
+**Escolha:**
+A métrica devolve os ids que contou, e o filtro `selection` mostra exatamente esses ids, com uma etiqueta que diz o que é o recorte. Ele vale até ser removido e não acompanha tarefas criadas depois.
+
+**Alternativas consideradas:**
+Filtros de idade, de pessoa, de período e de grupo de projetos (mais código e mais telas de filtro para algo que só o painel usa).
+
+## Prioridade sempre visível nas listas
+
+**Contexto:**
+O §53 do PRD pede mostrar só Alta e Urgente em listas compactas, para reduzir ruído. Com isso, abrir "Baixa" no mapa de urgência mostrava uma lista sem nada indicando a prioridade, e mudá-la exigia abrir a tarefa.
+
+**Escolha:**
+Todas as prioridades aparecem em linhas e cards, e o próprio rótulo abre o menu de troca. Normal e Baixa têm peso normal, e Alta e Urgente continuam em destaque.
+
+**Alternativas consideradas:**
+Mostrar Normal e Baixa só ao passar o mouse (não funciona no celular) ou só quando há filtro de prioridade (o rótulo mudaria de lugar conforme o filtro).
+
+## Campos da criação rápida
+
+**Contexto:**
+O §15 pede só título, projeto e prazo. Na prática, o mapa de urgência, "Para revisar" e "Para fazer hoje" dependem de prioridade, revisão e foco, que ficavam de fora, e toda tarefa nascia como Normal.
+
+**Escolha:**
+A criação ganha esses três campos, todos opcionais. Só o título é obrigatório, e Enter continua criando. Status fica de fora: toda tarefa nasce em A fazer, e mudar para Aguardando pede quem e quando revisar, o que a tela aberta em seguida já oferece.
+
+**Alternativas consideradas:**
+Esconder os campos em "Mais opções" (o usuário não encontraria a prioridade, que foi justamente o problema).
+
 ## Criação rápida abre a tarefa criada
 
 **Contexto:**

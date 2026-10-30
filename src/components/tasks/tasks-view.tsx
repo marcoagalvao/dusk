@@ -85,7 +85,8 @@ export function TasksView({ scope, viewOverride }: { scope: TaskScope; viewOverr
     const scoped = tasks.filter((task) => matchesScope(task, scope, today));
     const effectiveFilters: TaskFilters =
       view === "kanban" ? { ...filters, status: null, completion: "all" } : filters;
-    const filtered = filterTasks(scoped, effectiveFilters, projectsById, today);
+    // Arquivadas só vêm de um recorte do painel e, somente leitura, não entram no quadro.
+    const filtered = filterTasks(scoped, effectiveFilters, projectsById, today).filter((task) => view !== "kanban" || !isArchived(task));
     return scope === "upcoming" && sort === "smart" ? sortUpcoming(filtered, today) : sortTasks(filtered, sort, today);
   }, [tasks, scope, today, view, filters, projectsById, sort]);
 

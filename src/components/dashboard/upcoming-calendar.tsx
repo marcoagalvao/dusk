@@ -6,6 +6,8 @@ import { PRIORITY_LABELS, TASK_PRIORITIES } from "@/domain/task";
 import { formatShortDate, formatWeekdayShort, parseDateKey, type DateKey } from "@/lib/dates";
 import { cn } from "@/lib/utils/cn";
 
+import { FilterLink } from "./filter-link";
+
 const ITEMS_PER_DAY = 3;
 
 function Marker({ kind, color }: { kind: "due" | "review"; color: string }) {
@@ -60,7 +62,19 @@ export function UpcomingCalendar({ days, today }: { days: readonly UpcomingDay[]
                   </li>
                 ))}
               </ul>
-              {extra > 0 && <p className="mt-1 text-meta text-ink-muted">+{extra} {extra === 1 ? "tarefa" : "tarefas"}</p>}
+              {extra > 0 && (
+                <FilterLink
+                  filters={{
+                    selection: {
+                      label: `Prazos e revisões de ${isToday ? "hoje" : formatShortDate(day.date, today).slice(0, 5)}`,
+                      taskIds: day.items.map(({ task }) => task.id),
+                    },
+                  }}
+                  className="focus-ring mt-1 self-start rounded-[5px] text-meta text-ink-muted underline decoration-ink-subtle/60 underline-offset-2 transition-colors duration-120 hover:text-primary"
+                >
+                  +{extra} {extra === 1 ? "tarefa" : "tarefas"}
+                </FilterLink>
+              )}
             </li>
           );
         })}

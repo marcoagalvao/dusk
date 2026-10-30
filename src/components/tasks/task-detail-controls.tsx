@@ -4,7 +4,7 @@ import { CalendarClock, CalendarDays, ChevronDown, FolderOpen } from "lucide-rea
 import { useId, useState, type ReactNode } from "react";
 
 import { patchTask, setTaskStatus } from "@/actions/task-actions";
-import { PriorityBadge, ProjectLabel, StatusBadge } from "@/components/ui/badges";
+import { CompactPriority, PriorityBadge, ProjectLabel, StatusBadge } from "@/components/ui/badges";
 import { DateField } from "@/components/ui/date-field";
 import {
   DropdownMenu,
@@ -48,6 +48,7 @@ export function StatusControl({ task, disabled, onRequestWaiting }: StatusContro
     <DropdownMenu>
       <DropdownMenuTrigger className={CHIP_TRIGGER} disabled={disabled} aria-label={`Status: ${STATUS_LABELS[task.status]}. Alterar status`}>
         <StatusBadge status={task.status} />
+        {!disabled && <ChevronDown aria-hidden="true" className="size-3 text-ink-subtle" />}
       </DropdownMenuTrigger>
       <DropdownMenuContent align="start">
         <DropdownMenuLabel>Status</DropdownMenuLabel>
@@ -71,28 +72,54 @@ export function StatusControl({ task, disabled, onRequestWaiting }: StatusContro
   );
 }
 
+function PriorityMenuContent({ task }: { task: Task }) {
+  return (
+    <DropdownMenuContent align="start">
+      <DropdownMenuLabel>Prioridade</DropdownMenuLabel>
+      <DropdownMenuRadioGroup
+        value={task.priority}
+        onValueChange={(value) =>
+          patchTask(task.id, { priority: value as TaskPriority }, `Prioridade ${PRIORITY_LABELS[value as TaskPriority].toLowerCase()}`)
+        }
+      >
+        {TASK_PRIORITIES.map((priority) => (
+          <DropdownMenuRadioItem key={priority} value={priority}>
+            <span aria-hidden="true" className="size-2 rounded-full" style={{ backgroundColor: PRIORITY_COLOR[priority] }} />
+            {PRIORITY_LABELS[priority]}
+          </DropdownMenuRadioItem>
+        ))}
+      </DropdownMenuRadioGroup>
+    </DropdownMenuContent>
+  );
+}
+
+/** Versão de linha e card: muda a prioridade sem abrir a tarefa. Fica acima do link esticado da linha. */
+export function CompactPriorityControl({ task, disabled }: { task: Task; disabled?: boolean }) {
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger
+        disabled={disabled}
+        title={disabled ? undefined : "Alterar prioridade"}
+        aria-label={`Prioridade: ${PRIORITY_LABELS[task.priority]}. Alterar prioridade de "${task.title}"`}
+        className="focus-ring relative z-10 -mx-1 -my-1.5 inline-flex h-8 cursor-pointer items-center gap-0.5 rounded-[6px] px-1 transition-colors duration-120 hover:bg-raised disabled:pointer-events-none sm:-my-1 sm:h-7"
+      >
+        <CompactPriority priority={task.priority} />
+        {!disabled && <ChevronDown aria-hidden="true" className="size-3 text-ink-subtle" />}
+      </DropdownMenuTrigger>
+      <PriorityMenuContent task={task} />
+    </DropdownMenu>
+  );
+}
+
 export function PriorityControl({ task, disabled }: { task: Task; disabled?: boolean }) {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger className={CHIP_TRIGGER} disabled={disabled} aria-label={`Prioridade: ${PRIORITY_LABELS[task.priority]}. Alterar prioridade`}>
+        <span className="text-label text-ink-muted">Prioridade</span>
         <PriorityBadge priority={task.priority} />
+        {!disabled && <ChevronDown aria-hidden="true" className="size-3 text-ink-subtle" />}
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="start">
-        <DropdownMenuLabel>Prioridade</DropdownMenuLabel>
-        <DropdownMenuRadioGroup
-          value={task.priority}
-          onValueChange={(value) =>
-            patchTask(task.id, { priority: value as TaskPriority }, `Prioridade ${PRIORITY_LABELS[value as TaskPriority].toLowerCase()}`)
-          }
-        >
-          {TASK_PRIORITIES.map((priority) => (
-            <DropdownMenuRadioItem key={priority} value={priority}>
-              <span aria-hidden="true" className="size-2 rounded-full" style={{ backgroundColor: PRIORITY_COLOR[priority] }} />
-              {PRIORITY_LABELS[priority]}
-            </DropdownMenuRadioItem>
-          ))}
-        </DropdownMenuRadioGroup>
-      </DropdownMenuContent>
+      <PriorityMenuContent task={task} />
     </DropdownMenu>
   );
 }

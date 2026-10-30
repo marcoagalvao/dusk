@@ -33,11 +33,13 @@ export function PriorityBadge({ priority, className }: { priority: TaskPriority;
   );
 }
 
-/** Mostra prioridade só quando ela importa numa lista compacta (Alta/Urgente, PRD §53). */
+/** Prioridade numa lista compacta. Alta e Urgente pesam mais; as outras ficam discretas, mas sempre visíveis. */
 export function CompactPriority({ priority }: { priority: TaskPriority }) {
-  if (priority !== "urgent" && priority !== "high") return null;
   return (
-    <span className="inline-flex items-center gap-1 font-medium" style={{ color: PRIORITY_COLOR[priority] }}>
+    <span
+      className={cn("inline-flex items-center gap-1", (priority === "urgent" || priority === "high") && "font-medium")}
+      style={{ color: PRIORITY_COLOR[priority] }}
+    >
       <Flag className="size-3" aria-hidden="true" />
       {PRIORITY_LABELS[priority]}
     </span>

@@ -1,19 +1,21 @@
 "use client";
 
-import { ArrowRight, ListChecks, Sun } from "lucide-react";
+import { Archive, ArrowRight, ListChecks, Sun } from "lucide-react";
 import Link from "next/link";
 import { memo, useState } from "react";
 
 import { toggleFocus } from "@/actions/task-actions";
-import { CompactPriority, ProjectLabel } from "@/components/ui/badges";
+import { ProjectLabel } from "@/components/ui/badges";
+import { StatusGlyph } from "@/components/ui/status-glyph";
 import { STATUS_COLOR } from "@/components/ui/tokens";
 import type { Project } from "@/domain/project";
 import { STATUS_LABELS, STATUSES_WITH_WAITING, type Task } from "@/domain/task";
-import { isInFocus } from "@/domain/task-queries";
+import { isArchived, isInFocus } from "@/domain/task-queries";
 import { subtaskProgress } from "@/domain/task-rules";
 import { cn } from "@/lib/utils/cn";
 
 import { TaskCheckbox } from "./task-checkbox";
+import { CompactPriorityControl } from "./task-detail-controls";
 import { TaskDateLabel } from "./task-date";
 
 interface TaskRowProps {
@@ -28,7 +30,7 @@ interface TaskRowProps {
 
 /**
  * Linha de tarefa para leitura rápida (PRD §26). A linha inteira abre o
- * detalhe (link esticado); checkbox e foco ficam acima do link.
+ * detalhe (link esticado); checkbox, prioridade e foco ficam acima do link.
  */
 export const TaskRow = memo(function TaskRow({
   task,
@@ -40,6 +42,7 @@ export const TaskRow = memo(function TaskRow({
 }: TaskRowProps) {
   const [completing, setCompleting] = useState(false);
   const completed = task.status === "completed";
+  const archived = isArchived(task);
   const focused = isInFocus(task, today);
   const subtasks = subtaskProgress(task);
   const showWaiting = STATUSES_WITH_WAITING.includes(task.status) && task.waitingFor;
@@ -51,7 +54,13 @@ export const TaskRow = memo(function TaskRow({
         completing && "opacity-55",
       )}
     >
-      <TaskCheckbox task={task} onCompletingChange={setCompleting} className="-my-2" />
+      {archived ? (
+        <span className="-my-2 grid size-10 shrink-0 place-items-center">
+          <StatusGlyph status={task.status} size={18} />
+        </span>
+      ) : (
+        <TaskCheckbox task={task} onCompletingChange={setCompleting} className="-my-2" />
+      )}
 
       <div className="min-w-0 flex-1">
         <div className="flex items-start gap-3">
@@ -75,7 +84,13 @@ export const TaskRow = memo(function TaskRow({
             {STATUS_LABELS[task.status]}
             {showWaiting && <span className="max-w-48 truncate text-ink-muted">· {task.waitingFor}</span>}
           </span>
-          <CompactPriority priority={task.priority} />
+          <CompactPriorityControl task={task} disabled={archived} />
+          {archived && (
+            <span className="inline-flex items-center gap-1 text-ink-muted">
+              <Archive aria-hidden="true" className="size-3.5" />
+              Arquivada
+            </span>
+          )}
           {subtasks.total > 0 && (
             <span className="inline-flex items-center gap-1 text-ink-subtle tabular-nums" title="Subtarefas concluídas">
               <ListChecks aria-hidden="true" className="size-3.5" />

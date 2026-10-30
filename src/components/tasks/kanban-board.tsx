@@ -21,7 +21,7 @@ import {
 import { ArrowRight, GripVertical, Hourglass } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useMemo, useRef, useState } from "react";
+import { useMemo, useRef, useState, type ReactNode, type SyntheticEvent } from "react";
 
 import { setTaskStatus } from "@/actions/task-actions";
 import { CompactPriority, ProjectLabel } from "@/components/ui/badges";
@@ -35,6 +35,7 @@ import { toast } from "@/store/ui-store";
 
 import { ProgressUpdateDialog } from "./progress-update-dialog";
 import { TaskDateLabel } from "./task-date";
+import { CompactPriorityControl } from "./task-detail-controls";
 
 /** A coluna Concluído mostra só o que terminou recentemente, para não crescer sem fim. */
 export const KANBAN_COMPLETED_DAYS = 7;
@@ -245,9 +246,11 @@ interface CardBodyProps {
   project?: Project;
   today: string;
   className?: string;
+  /** No cartão real a prioridade é editável; na sombra do arraste, só leitura. */
+  priority?: ReactNode;
 }
 
-function CardBody({ task, project, today, className }: CardBodyProps) {
+function CardBody({ task, project, today, className, priority }: CardBodyProps) {
   const completed = task.status === "completed";
   return (
     <div className={cn("flex flex-col gap-1.5 rounded-[10px] border p-3 text-left", className)}>
@@ -263,7 +266,7 @@ function CardBody({ task, project, today, className }: CardBodyProps) {
       )}
       <span className="flex flex-wrap items-center gap-x-2.5 gap-y-1 text-meta text-ink-muted">
         {project && <ProjectLabel project={project} className="max-w-32" />}
-        <CompactPriority priority={task.priority} />
+        {priority ?? <CompactPriority priority={task.priority} />}
         {!completed && <TaskDateLabel task={task} today={today} />}
       </span>
       {task.nextAction && !completed && (
@@ -275,6 +278,8 @@ function CardBody({ task, project, today, className }: CardBodyProps) {
     </div>
   );
 }
+
+const stopPropagation = (event: SyntheticEvent) => event.stopPropagation();
 
 function KanbanCard({
   task,
@@ -302,6 +307,12 @@ function KanbanCard({
         project={project}
         today={today}
         className="cursor-grab border-line/70 bg-surface transition-colors duration-120 group-hover:border-line group-hover:bg-raised"
+        priority={
+          // O menu abre em portal, mas seus eventos ainda sobem pela árvore do React até o cartão.
+          <span onClick={stopPropagation} onMouseDown={stopPropagation} onTouchStart={stopPropagation} onKeyDown={stopPropagation}>
+            <CompactPriorityControl task={task} />
+          </span>
+        }
       />
       <GripVertical aria-hidden="true" className="absolute top-3 right-2 size-3.5 text-ink-subtle opacity-0 transition-opacity duration-120 group-hover:opacity-100" />
       <Link

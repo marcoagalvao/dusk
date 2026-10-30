@@ -169,6 +169,7 @@ export interface ReportProjectRow {
   /** Ausente em "Sem projeto" e "Outros", que usam cor neutra. */
   color?: ProjectColor;
   completed: number;
+  taskIds: string[];
 }
 
 export interface PeriodReport {
@@ -199,16 +200,18 @@ function groupByProject(completed: readonly Task[], projects: readonly Project[]
   for (const task of completed) {
     const project = task.projectId ? projectsById.get(task.projectId) : undefined;
     const id = project?.id ?? "__none__";
-    const row = rows.get(id) ?? { id, name: project?.name ?? "Sem projeto", color: project?.color, completed: 0 };
+    const row = rows.get(id) ?? { id, name: project?.name ?? "Sem projeto", color: project?.color, completed: 0, taskIds: [] };
     row.completed += 1;
+    row.taskIds.push(task.id);
     rows.set(id, row);
   }
 
   const sorted = [...rows.values()].sort((a, b) => b.completed - a.completed);
   if (sorted.length <= PROJECT_ROWS_LIMIT) return sorted;
 
-  const others = sorted.slice(PROJECT_ROWS_LIMIT).reduce((sum, row) => sum + row.completed, 0);
-  return [...sorted.slice(0, PROJECT_ROWS_LIMIT), { id: "__others__", name: "Outros", completed: others }];
+  const rest = sorted.slice(PROJECT_ROWS_LIMIT);
+  const others = rest.reduce((sum, row) => sum + row.completed, 0);
+  return [...sorted.slice(0, PROJECT_ROWS_LIMIT), { id: "__others__", name: "Outros", completed: others, taskIds: rest.flatMap((row) => row.taskIds) }];
 }
 
 /**
@@ -272,6 +275,7 @@ export function periodReport(
 export interface AgingBucket {
   label: string;
   count: number;
+  taskIds: string[];
 }
 
 const AGING_LIMITS: ReadonlyArray<{ label: string; upTo: number }> = [
@@ -284,10 +288,12 @@ const AGING_LIMITS: ReadonlyArray<{ label: string; upTo: number }> = [
 
 /** Há quanto tempo as tarefas abertas existem: fila parada aparece aqui. */
 export function agingBuckets(tasks: readonly Task[], today: DateKey): AgingBucket[] {
-  const buckets = AGING_LIMITS.map(({ label }) => ({ label, count: 0 }));
+  const buckets: AgingBucket[] = AGING_LIMITS.map(({ label }) => ({ label, count: 0, taskIds: [] }));
   for (const task of tasks.filter(isOpen)) {
     const age = diffInDays(today, dayOf(task.createdAt));
-    buckets[AGING_LIMITS.findIndex(({ upTo }) => age <= upTo)].count += 1;
+    const bucket = buckets[AGING_LIMITS.findIndex(({ upTo }) => age <= upTo)];
+    bucket.count += 1;
+    bucket.taskIds.push(task.id);
   }
   return buckets;
 }
@@ -330,6 +336,7 @@ export interface WaitingPerson {
   count: number;
   /** Dias desde a atualização mais antiga entre as tarefas aguardando essa pessoa. */
   oldestDays: number;
+  taskIds: string[];
 }
 
 export function waitingByPerson(tasks: readonly Task[], today: DateKey): WaitingPerson[] {
@@ -343,8 +350,9 @@ export function waitingByPerson(tasks: readonly Task[], today: DateKey): Waiting
     if (person) {
       person.count += 1;
       person.oldestDays = Math.max(person.oldestDays, days);
+      person.taskIds.push(task.id);
     } else {
-      people.set(key, { name: task.waitingFor, count: 1, oldestDays: days });
+      people.set(key, { name: task.waitingFor, count: 1, oldestDays: days, taskIds: [task.id] });
     }
   }
 

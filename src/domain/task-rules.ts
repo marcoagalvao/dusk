@@ -14,6 +14,8 @@ export interface CreateTaskInput {
   projectId?: string;
   dueDate?: string;
   focusDate?: string;
+  priority?: TaskPriority;
+  reviewDate?: string;
 }
 
 export function buildTask(input: CreateTaskInput, now: string): Task {
@@ -24,9 +26,10 @@ export function buildTask(input: CreateTaskInput, now: string): Task {
     id: createId(),
     title,
     status: "todo",
-    priority: "normal",
+    priority: input.priority ?? "normal",
     projectId: input.projectId || undefined,
     dueDate: validDateOrUndefined(input.dueDate),
+    reviewDate: validDateOrUndefined(input.reviewDate),
     focusDate: validDateOrUndefined(input.focusDate),
     subtasks: [],
     updates: [],

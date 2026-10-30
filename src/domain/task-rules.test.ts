@@ -225,3 +225,19 @@ describe("subtarefas", () => {
     expect(task.subtasks.map((s) => s.title)).toEqual(["Página inicial"]);
   });
 });
+
+describe("buildTask na criação", () => {
+  const NOW = "2026-10-01T10:00:00.000Z";
+
+  it("sem escolha, a prioridade é normal e não há revisão", () => {
+    const task = buildTask({ title: "Sem extras" }, NOW);
+    expect(task.priority).toBe("normal");
+    expect(task.reviewDate).toBeUndefined();
+  });
+
+  it("guarda a prioridade e a revisão escolhidas", () => {
+    const task = buildTask({ title: "Com extras", priority: "urgent", reviewDate: "2026-10-05" }, NOW);
+    expect(task.priority).toBe("urgent");
+    expect(task.reviewDate).toBe("2026-10-05");
+  });
+});

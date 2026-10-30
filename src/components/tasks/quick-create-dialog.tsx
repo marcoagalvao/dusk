@@ -1,19 +1,21 @@
 "use client";
 
 import { CornerDownLeft } from "lucide-react";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useId, useRef, useState, type FormEvent } from "react";
 
 import { createTask } from "@/actions/task-actions";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogFooter, DialogHeader } from "@/components/ui/dialog";
 import { Field, Input, Select } from "@/components/ui/form-controls";
+import { PRIORITY_LABELS, TASK_PRIORITIES, type TaskPriority } from "@/domain/task";
+import { useToday } from "@/hooks/use-clock";
 import { useActiveProjects } from "@/store/hooks";
 import { useUiStore, type QuickCreateDefaults } from "@/store/ui-store";
 
 export const TASK_TITLE_MAX_LENGTH = 200;
 
-/** Criação rápida (PRD §15): só o título é obrigatório; Enter cria, Esc fecha. */
+/** Criação rápida (PRD §15): só o título é obrigatório; Enter cria, Esc fecha. O resto é opcional e já alimenta o painel. */
 export function QuickCreateDialog() {
   const { open, defaults } = useUiStore((state) => state.quickCreate);
   const close = useUiStore((state) => state.closeQuickCreate);
@@ -48,6 +50,10 @@ function QuickCreateForm({
   const titleId = useId();
   const projectId = useId();
   const dueId = useId();
+  const priorityId = useId();
+  const reviewId = useId();
+  const pathname = usePathname();
+  const today = useToday();
   const projects = useActiveProjects();
   const [title, setTitle] = useState("");
   // Só aceita o projeto sugerido se ele estiver entre as opções visíveis.
@@ -55,6 +61,10 @@ function QuickCreateForm({
     defaults.projectId && projects.some((p) => p.id === defaults.projectId) ? defaults.projectId : "",
   );
   const [dueDate, setDueDate] = useState("");
+  const [priority, setPriority] = useState<TaskPriority>("normal");
+  const [reviewDate, setReviewDate] = useState("");
+  // Quem cria a partir da vista Hoje espera ver a tarefa lá.
+  const [inFocus, setInFocus] = useState(pathname === "/tasks/today");
   const canCreate = title.trim().length > 0;
   // O conteúdo continua montado durante a animação de saída; isso impede que
   // um Enter repetido nesse intervalo crie a tarefa duas vezes.
@@ -69,7 +79,14 @@ function QuickCreateForm({
     }
     submittedRef.current = true;
     titleRef.current?.blur();
-    const task = createTask({ title, projectId: project || undefined, dueDate: dueDate || undefined });
+    const task = createTask({
+      title,
+      projectId: project || undefined,
+      priority,
+      dueDate: dueDate || undefined,
+      reviewDate: reviewDate || undefined,
+      focusDate: inFocus ? today : undefined,
+    });
     onDone();
     // Abre a tarefa recém-criada para completar o contexto; o "voltar" do
     // detalhe leva de volta à tela onde a criação começou.
@@ -104,10 +121,32 @@ function QuickCreateForm({
             ))}
           </Select>
         </Field>
+        <Field label="Prioridade" htmlFor={priorityId}>
+          <Select id={priorityId} value={priority} onChange={(event) => setPriority(event.target.value as TaskPriority)}>
+            {TASK_PRIORITIES.map((value) => (
+              <option key={value} value={value}>
+                {PRIORITY_LABELS[value]}
+              </option>
+            ))}
+          </Select>
+        </Field>
         <Field label="Prazo" htmlFor={dueId}>
           <Input id={dueId} type="date" value={dueDate} onChange={(event) => setDueDate(event.target.value)} />
         </Field>
+        <Field label="Revisar em" htmlFor={reviewId}>
+          <Input id={reviewId} type="date" value={reviewDate} onChange={(event) => setReviewDate(event.target.value)} />
+        </Field>
       </div>
+
+      <label className="flex min-h-6 cursor-pointer items-center gap-2 text-compact text-ink-muted">
+        <input
+          type="checkbox"
+          checked={inFocus}
+          onChange={(event) => setInFocus(event.target.checked)}
+          className="size-4 accent-primary"
+        />
+        Colocar no foco de hoje
+      </label>
 
       <DialogFooter>
         <Button variant="ghost" onClick={onDone}>

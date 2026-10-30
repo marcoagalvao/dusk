@@ -13,6 +13,9 @@ Toda mudança entra aqui na mesma entrega, com a data. As regras estão em [`AGE
 - Importação automática, uma vez por navegador, dos dados antigos do `localStorage`.
 - Novo painel na visão geral: situação do dia em uma frase, percentual do dia, contadores clicáveis, "Para fazer hoje", mapa de urgência, barra de status e calendário de duas semanas.
 - Relatórios de semana, quinzena e mês: concluídas, criadas, entrega no prazo, tempo até concluir, gráfico diário, concluídas por projeto, mapa de atividade, tempo em aberto e quem você está aguardando.
+- Criação rápida com prioridade, revisão e foco de hoje, para o painel refletir a tarefa desde o início. A prioridade na tela da tarefa agora diz o que é e mostra que dá para clicar.
+- Todo bloco do relatório abre as tarefas contadas: concluídas por projeto, tempo em aberto, quem você está aguardando e "+N tarefas" do calendário.
+- Prioridade visível em todas as linhas e cards, com menu para mudar sem abrir a tarefa.
 - Filtros de prazo "Depois de hoje, em até 7 dias" e "Daqui a mais de 7 dias" na lista de tarefas.
 - Documentação reorganizada para consulta por IA: `AGENTS.md` como entrada, mais `docs/ARCHITECTURE.md`, `docs/DATA_MODEL.md`, `docs/FEATURES.md`, `docs/DASHBOARD.md` e `docs/SETUP.md`, além de regra para manter tudo em dia e teste que acusa versão, links e migrations fora de sincronia.
 

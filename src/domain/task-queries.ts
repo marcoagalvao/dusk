@@ -225,6 +225,15 @@ export const COMPLETION_FILTER_LABELS: Record<CompletionFilter, string> = {
 /** Valor especial do filtro de projeto para tarefas sem projeto. */
 export const NO_PROJECT = "__none__";
 
+/**
+ * Recorte aberto a partir de um número do painel: as próprias tarefas contadas,
+ * para a lista sempre coincidir com o número clicado.
+ */
+export interface TaskSelection {
+  label: string;
+  taskIds: readonly string[];
+}
+
 export interface TaskFilters {
   search: string;
   projectId: string | null;
@@ -234,6 +243,7 @@ export interface TaskFilters {
   focusToday: boolean;
   reviewDue: boolean;
   completion: CompletionFilter;
+  selection: TaskSelection | null;
 }
 
 export const DEFAULT_TASK_FILTERS: TaskFilters = {
@@ -245,6 +255,7 @@ export const DEFAULT_TASK_FILTERS: TaskFilters = {
   focusToday: false,
   reviewDue: false,
   completion: "open",
+  selection: null,
 };
 
 /** Quantidade de filtros ativos, sem contar a busca textual. */
@@ -257,6 +268,7 @@ export function countActiveFilters(filters: TaskFilters): number {
     filters.focusToday,
     filters.reviewDue,
     filters.completion !== DEFAULT_TASK_FILTERS.completion,
+    filters.selection !== null,
   ].filter(Boolean).length;
 }
 
@@ -280,6 +292,8 @@ function matchesDueFilter(task: Task, due: DueFilter, today: DateKey): boolean {
 /**
  * Filtra tarefas não arquivadas. Um filtro de status explícito tem precedência
  * sobre o filtro abertas/concluídas (escolher "Concluído" mostra concluídas).
+ * Um recorte do painel traz exatamente o que foi contado: pode incluir arquivadas
+ * (o relatório as conta) e não é reduzido às abertas pelo filtro padrão.
  */
 export function filterTasks(
   tasks: readonly Task[],
@@ -288,17 +302,19 @@ export function filterTasks(
   today: DateKey,
 ): Task[] {
   const query = normalizeForSearch(filters.search);
+  const selected = filters.selection ? new Set(filters.selection.taskIds) : null;
+  const completion = selected && filters.completion === "open" ? "all" : filters.completion;
 
   return tasks.filter((task) => {
-    if (isArchived(task)) return false;
+    if (selected ? !selected.has(task.id) : isArchived(task)) return false;
 
     if (filters.status) {
       if (task.status !== filters.status) return false;
-    } else if (filters.completion === "open" && isCompleted(task)) {
+    } else if (completion === "open" && isCompleted(task)) {
       return false;
-    } else if (filters.completion === "completed" && !isCompleted(task)) {
+    } else if (completion === "completed" && !isCompleted(task)) {
       return false;
-    } else if (filters.completion === "today" && !(isCompleted(task) && task.completedAt && toDateKey(new Date(task.completedAt)) === today)) {
+    } else if (completion === "today" && !(isCompleted(task) && task.completedAt && toDateKey(new Date(task.completedAt)) === today)) {
       return false;
     }
 

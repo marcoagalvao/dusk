@@ -31,7 +31,7 @@ Painel para entender o dia de relance. Blocos, métricas e regras em [`DASHBOARD
 
 ## Tarefas
 
-- **Criação rápida:** tecla `N`, botão ou `+` no celular. Só o título é obrigatório; projeto e prazo são opcionais. Enter cria, e o app abre a tarefa criada.
+- **Criação rápida:** tecla `N`, botão ou `+` no celular. Só o título é obrigatório. Projeto, prioridade (padrão Normal), prazo, revisão e foco de hoje são opcionais. Criando a partir da vista Hoje, o foco já vem marcado. Enter cria, e o app abre a tarefa criada.
 - **Detalhe** (`/tasks/[id]`): próxima ação em destaque, aguardando, último avanço, subtarefas, histórico e controles de status, prioridade, projeto, prazo e revisão. O "voltar" retorna à última lista visitada.
 - **Concluir em um clique** no glifo de status, com desfazer no toast. Reabrir registra evento no histórico.
 - **Arquivar e restaurar**, com desfazer. **Excluir** pede confirmação.
@@ -49,9 +49,11 @@ Painel para entender o dia de relance. Blocos, métricas e regras em [`DASHBOARD
 
 - **Lista:** agrupada em Hoje, Próximas e Sem data só na ordenação "Inteligente"; nas demais, lista plana.
 - **Kanban:** cinco colunas, com arrastar por mouse, toque e teclado. Concluído mostra os últimos 7 dias. Soltar em Aguardando sem pessoa oferece registrar quem.
+- **Prioridade:** as quatro aparecem em toda linha e todo card, com menu para mudar ali mesmo, sem abrir a tarefa.
 - **Vistas:** Hoje, Próximas, Aguardando e Atrasadas.
 - **Busca** instantânea, ignorando acentos, em título, projeto, último avanço, aguardando, próxima ação e observação.
 - **Filtros:** projeto, status, prioridade, prazo (atrasada, hoje, esta semana, em até 7 dias, mais de 7 dias, sem prazo), foco, revisão vencida e situação (abertas, concluídas, concluídas hoje ou todas). Status específico tem precedência sobre Abertas/Concluídas.
+- **Recorte do painel:** abrir um bloco do painel traz as tarefas contadas, com um filtro próprio que aparece como etiqueta removível. Concluídas arquivadas contadas pelo relatório aparecem marcadas como "Arquivada" e só podem ser abertas; no Kanban elas ficam de fora.
 - **Ordenação:** Inteligente, Prazo, Prioridade, Mais recente, Mais antiga e Alfabética.
 
 ## Projetos

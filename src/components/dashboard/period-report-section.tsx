@@ -1,8 +1,7 @@
 "use client";
 
-import { ArrowDown, ArrowUp, Flame, Minus } from "lucide-react";
-import Link from "next/link";
-import { useMemo, useState, type ReactNode } from "react";
+import { ArrowDown, ArrowUp, ChevronRight, Flame, Minus } from "lucide-react";
+import { useMemo, useState, type ComponentProps, type ReactNode } from "react";
 
 import { SegmentedControl } from "@/components/ui/misc";
 import { PROJECT_COLOR } from "@/components/ui/tokens";
@@ -14,12 +13,14 @@ import {
   REPORT_PERIODS,
   waitingByPerson,
   type ReportPeriod,
+  type ReportProjectRow,
 } from "@/domain/dashboard-metrics";
 import type { Project } from "@/domain/project";
 import type { Task } from "@/domain/task";
 import { cn } from "@/lib/utils/cn";
 
 import { DailyBars, Heatmap, LabeledBar } from "./charts";
+import { FilterLink } from "./filter-link";
 import { Tile, TileHeading } from "./tile";
 
 const HEATMAP_WEEKS = 12;
@@ -77,6 +78,37 @@ function ChartBlock({ title, description, children, className }: { title: string
       {children}
     </Tile>
   );
+}
+
+const countLabel = (count: number) => `${count} ${count === 1 ? "tarefa" : "tarefas"}`;
+
+/** Linha do relatório que abre a lista com as tarefas contadas. Zerada, não há o que abrir. */
+function BarRow({ selection, taskIds, ...bar }: { selection: string; taskIds: readonly string[] } & ComponentProps<typeof LabeledBar>) {
+  const row = (
+    <>
+      <div className="min-w-0 flex-1">
+        <LabeledBar {...bar} />
+      </div>
+      <ChevronRight aria-hidden="true" className={cn("size-3.5 shrink-0 text-ink-subtle", taskIds.length === 0 && "invisible")} />
+    </>
+  );
+  const layout = "-mx-2 flex items-center gap-1 rounded-[8px] px-2 py-1";
+
+  if (taskIds.length === 0) return <div className={layout}>{row}</div>;
+  return (
+    <FilterLink
+      filters={{ selection: { label: selection, taskIds } }}
+      aria-label={`${selection}: ${countLabel(taskIds.length)}`}
+      className={cn("focus-ring transition-colors duration-120 hover:bg-raised/60", layout)}
+    >
+      {row}
+    </FilterLink>
+  );
+}
+
+function completedLabel(row: ReportProjectRow, period: ReportPeriod): string {
+  const where = row.id === "__none__" ? "sem projeto" : row.id === "__others__" ? "em outros projetos" : `em ${row.name}`;
+  return `Concluídas ${where}, últimos ${period} dias`;
 }
 
 export function PeriodReportSection({ tasks, projects, today }: { tasks: readonly Task[]; projects: readonly Project[]; today: string }) {
@@ -152,10 +184,12 @@ export function PeriodReportSection({ tasks, projects, today }: { tasks: readonl
           {report.byProject.length === 0 ? (
             <p className="text-compact text-ink-muted">Nenhuma entrega no período.</p>
           ) : (
-            <div className="flex flex-col gap-2.5">
+            <div className="flex flex-col gap-1">
               {report.byProject.map((row) => (
-                <LabeledBar
+                <BarRow
                   key={row.id}
+                  selection={completedLabel(row, period)}
+                  taskIds={row.taskIds}
                   label={row.name}
                   value={row.completed}
                   max={projectMax}
@@ -171,9 +205,17 @@ export function PeriodReportSection({ tasks, projects, today }: { tasks: readonl
         </ChartBlock>
 
         <ChartBlock title="Há quanto tempo estão abertas" description="Barras nas últimas linhas são tarefas esquecidas.">
-          <div className="flex flex-col gap-2.5">
+          <div className="flex flex-col gap-1">
             {health.aging.map((bucket, index) => (
-              <LabeledBar key={bucket.label} label={bucket.label} value={bucket.count} max={agingMax} color={AGING_TONES[index]} />
+              <BarRow
+                key={bucket.label}
+                selection={`Abertas há ${bucket.label}`}
+                taskIds={bucket.taskIds}
+                label={bucket.label}
+                value={bucket.count}
+                max={agingMax}
+                color={AGING_TONES[index]}
+              />
             ))}
           </div>
         </ChartBlock>
@@ -185,16 +227,17 @@ export function PeriodReportSection({ tasks, projects, today }: { tasks: readonl
             <ul className="flex flex-col">
               {health.people.map((person) => (
                 <li key={person.name}>
-                  <Link
-                    href="/tasks/waiting"
-                    className="focus-ring -mx-2 flex items-center justify-between gap-3 rounded-[8px] px-2 py-1.5 text-label transition-colors duration-120 hover:bg-raised/60"
+                  <FilterLink
+                    filters={{ selection: { label: `Aguardando ${person.name}`, taskIds: person.taskIds } }}
+                    className="focus-ring -mx-2 flex items-center gap-3 rounded-[8px] px-2 py-1.5 text-label transition-colors duration-120 hover:bg-raised/60"
                   >
-                    <span className="min-w-0 truncate font-medium text-ink">{person.name}</span>
+                    <span className="min-w-0 flex-1 truncate font-medium text-ink">{person.name}</span>
                     <span className="shrink-0 text-ink-muted">
-                      {person.count} {person.count === 1 ? "tarefa" : "tarefas"}
+                      {countLabel(person.count)}
                       {person.oldestDays > 0 && <span> · há {person.oldestDays} {person.oldestDays === 1 ? "dia" : "dias"}</span>}
                     </span>
-                  </Link>
+                    <ChevronRight aria-hidden="true" className="-ml-2 size-3.5 shrink-0 text-ink-subtle" />
+                  </FilterLink>
                 </li>
               ))}
             </ul>
