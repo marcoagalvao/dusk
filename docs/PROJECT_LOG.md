@@ -2,6 +2,8 @@
 
 Registro cronológico do desenvolvimento da V1, a partir de `PRD_Dusk_Task_Manager.md`.
 
+> **Documento histórico, não atualize.** Descreve como a V1 foi construída em 2026-10-02 e pode citar arquivos e comportamentos que já mudaram, como o armazenamento só no navegador. Mudanças novas vão para `CHANGELOG.md`, e o estado atual está em `docs/FEATURES.md` e `docs/ARCHITECTURE.md`.
+
 ## 2026-10-02 - Estrutura base
 
 ### Implementado

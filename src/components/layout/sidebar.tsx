@@ -161,7 +161,7 @@ export function Sidebar({ className }: { className?: string }) {
           ) : (
             <span aria-hidden="true" className="h-px w-6 bg-line" />
           )}
-          {!collapsed && (
+          {!collapsed && hydrated && (
             <ProjectFormDialog
               trigger={<IconButton label="Novo projeto" icon={<Plus className="size-3.5" />} size="sm" />}
             />

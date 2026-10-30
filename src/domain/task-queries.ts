@@ -1,4 +1,4 @@
-import { addDaysToKey, type DateKey } from "@/lib/dates";
+import { addDaysToKey, toDateKey, type DateKey } from "@/lib/dates";
 import { normalizeForSearch } from "@/lib/utils/text";
 
 import type { Project } from "./project";
@@ -201,21 +201,24 @@ export function matchesSearch(task: Task, normalizedQuery: string, projectName?:
   return normalizeForSearch(haystack).includes(normalizedQuery);
 }
 
-export const DUE_FILTERS = ["overdue", "today", "week", "none"] as const;
+export const DUE_FILTERS = ["overdue", "today", "week", "soon", "later", "none"] as const;
 export type DueFilter = (typeof DUE_FILTERS)[number];
 
 export const DUE_FILTER_LABELS: Record<DueFilter, string> = {
   overdue: "Atrasadas",
   today: "Vence hoje",
-  week: "Próximos 7 dias",
+  week: "Hoje e próximos 7 dias",
+  soon: "Depois de hoje, em até 7 dias",
+  later: "Daqui a mais de 7 dias",
   none: "Sem prazo",
 };
 
-export type CompletionFilter = "open" | "completed" | "all";
+export type CompletionFilter = "open" | "completed" | "today" | "all";
 
 export const COMPLETION_FILTER_LABELS: Record<CompletionFilter, string> = {
   open: "Abertas",
   completed: "Concluídas",
+  today: "Concluídas hoje",
   all: "Todas",
 };
 
@@ -265,6 +268,10 @@ function matchesDueFilter(task: Task, due: DueFilter, today: DateKey): boolean {
       return task.dueDate === today;
     case "week":
       return Boolean(task.dueDate) && task.dueDate! >= today && task.dueDate! <= addDaysToKey(today, 7);
+    case "soon":
+      return Boolean(task.dueDate) && task.dueDate! > today && task.dueDate! <= addDaysToKey(today, 7);
+    case "later":
+      return Boolean(task.dueDate) && task.dueDate! > addDaysToKey(today, 7);
     case "none":
       return !task.dueDate;
   }
@@ -290,6 +297,8 @@ export function filterTasks(
     } else if (filters.completion === "open" && isCompleted(task)) {
       return false;
     } else if (filters.completion === "completed" && !isCompleted(task)) {
+      return false;
+    } else if (filters.completion === "today" && !(isCompleted(task) && task.completedAt && toDateKey(new Date(task.completedAt)) === today)) {
       return false;
     }
 

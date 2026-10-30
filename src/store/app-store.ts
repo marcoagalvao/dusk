@@ -12,9 +12,9 @@ import { createTasksSlice } from "./slices/tasks-slice";
 import type { AppStore } from "./types";
 
 /**
- * Store único e persistido (PRD §44). A hidratação é manual (`skipHydration`)
- * para que o HTML do servidor e o primeiro render do cliente coincidam; ela é
- * disparada por `StoreHydrator` após a montagem.
+ * Store único e persistido (PRD §44). A hidratação é manual (`skipHydration`):
+ * os dados dependem do usuário logado e vêm do banco, então `useStoreHydration` a
+ * dispara depois do login.
  */
 export const useAppStore = create<AppStore>()(
   persist(
@@ -43,8 +43,7 @@ export function getAppData(): AppData {
   return { tasks, projects, settings };
 }
 
-/** Apaga tudo: estado em memória e armazenamento local. */
+/** Apaga tudo: o estado zerado vira DELETE no banco pelo fluxo normal de `save`. */
 export function eraseAllData(): void {
   useAppStore.getState().resetData();
-  useAppStore.persist.clearStorage();
 }

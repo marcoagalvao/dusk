@@ -84,6 +84,11 @@ export function formatRelativeDay(key: DateKey, today: DateKey = todayKey()): st
   return formatShortDate(key, today);
 }
 
+/** `Seg`, `Ter`… */
+export function formatWeekdayShort(key: DateKey): string {
+  return capitalize(format(parseDateKey(key), "EEE", { locale: ptBR }));
+}
+
 /** `Quinta-feira, 2 de outubro` */
 export function formatLongDate(date: Date): string {
   return capitalize(format(date, "EEEE, d 'de' MMMM", { locale: ptBR }));

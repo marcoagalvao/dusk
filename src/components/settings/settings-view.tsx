@@ -1,14 +1,17 @@
 "use client";
 
-import { Columns3, LayoutList, Trash2 } from "lucide-react";
+import { Columns3, LayoutList, LogOut, Trash2 } from "lucide-react";
 import { useId, useState } from "react";
 
+import { signOut } from "@/actions/auth-actions";
 import { eraseData } from "@/actions/data-actions";
+import { useAuthUser } from "@/components/auth/use-auth-user";
 import { PageContainer, PageHeader } from "@/components/layout/page";
 import { Button } from "@/components/ui/button";
 import { ConfirmDialog } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/form-controls";
 import { SegmentedControl } from "@/components/ui/misc";
+import { SyncBadge } from "@/components/ui/sync-badge";
 import { STATUS_COLOR } from "@/components/ui/tokens";
 import { APP_VERSION, SCHEMA_VERSION } from "@/domain/app-data";
 import { DISPLAY_NAME_MAX_LENGTH, type TaskView } from "@/domain/settings";
@@ -24,6 +27,7 @@ const ERASE_CONFIRMATION = "APAGAR";
 
 export function SettingsView() {
   const settings = useSettings();
+  const user = useAuthUser();
   const updateSettings = useAppStore((state) => state.updateSettings);
   const nameId = useId();
   const eraseId = useId();
@@ -74,7 +78,7 @@ export function SettingsView() {
           <BackupSection />
           <SettingsRow
             title="Apagar todos os dados"
-            description="Remove todas as tarefas, projetos e configurações deste navegador. Não dá para desfazer."
+            description="Remove todas as tarefas, projetos e configurações do banco de dados, em todos os dispositivos. Não dá para desfazer."
             action={
               <Button variant="danger" onClick={() => setEraseOpen(true)}>
                 <Trash2 aria-hidden="true" className="size-4" />
@@ -92,7 +96,18 @@ export function SettingsView() {
           />
           <SettingsRow
             title="Onde seus dados ficam"
-            description="Tudo é salvo apenas neste navegador (armazenamento local). Outro navegador ou o celular não veem estes dados, e limpar os dados do site apaga tudo. Exporte backups com frequência."
+            description="No banco de dados, ligados à sua conta: entrando em qualquer dispositivo você vê as mesmas tarefas. Sem conexão, as alterações ficam neste navegador e são enviadas quando ela voltar."
+          />
+          <SettingsRow title="Sincronização" action={<SyncBadge />} />
+          <SettingsRow
+            title="Sua conta"
+            description={user?.email}
+            action={
+              <Button variant="secondary" onClick={() => void signOut()}>
+                <LogOut aria-hidden="true" className="size-4" />
+                Sair
+              </Button>
+            }
           />
         </SettingsSection>
       </div>
@@ -104,7 +119,7 @@ export function SettingsView() {
           if (!open) setEraseText("");
         }}
         title="Apagar todos os dados?"
-        description="Tarefas, projetos, histórico e configurações serão removidos deste navegador. Considere exportar um backup antes."
+        description="Tarefas, projetos, histórico e configurações serão removidos do banco de dados, em todos os dispositivos. Considere exportar um backup antes."
         confirmLabel="Apagar tudo"
         confirmDisabled={eraseText !== ERASE_CONFIRMATION}
         onConfirm={eraseData}

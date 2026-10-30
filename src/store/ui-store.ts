@@ -1,6 +1,7 @@
 import { create } from "zustand";
 
 import { DEFAULT_TASK_FILTERS, type TaskFilters, type TaskSort } from "@/domain/task-queries";
+import type { SyncStatus } from "@/lib/persistence/types";
 import { createId } from "@/lib/utils/id";
 
 /**
@@ -24,7 +25,14 @@ export interface QuickCreateDefaults {
 
 interface UiStore {
   hydrated: boolean;
-  setHydrated: () => void;
+  setHydrated: (hydrated?: boolean) => void;
+
+  /** O primeiro carregamento falhou e não há cópia local para mostrar. */
+  loadFailed: boolean;
+  setLoadFailed: (loadFailed: boolean) => void;
+
+  syncStatus: SyncStatus;
+  setSyncStatus: (syncStatus: SyncStatus) => void;
 
   toasts: Toast[];
   showToast: (toast: Omit<Toast, "id" | "tone" | "duration"> & Partial<Pick<Toast, "tone" | "duration">>) => string;
@@ -55,7 +63,13 @@ const DEFAULT_TOAST_DURATION = 3200;
 
 export const useUiStore = create<UiStore>()((set) => ({
   hydrated: false,
-  setHydrated: () => set({ hydrated: true }),
+  setHydrated: (hydrated = true) => set({ hydrated }),
+
+  loadFailed: false,
+  setLoadFailed: (loadFailed) => set({ loadFailed }),
+
+  syncStatus: "idle",
+  setSyncStatus: (syncStatus) => set({ syncStatus }),
 
   toasts: [],
   showToast: (toast) => {
@@ -67,7 +81,8 @@ export const useUiStore = create<UiStore>()((set) => ({
   dismissToast: (id) => set((state) => ({ toasts: state.toasts.filter((toast) => toast.id !== id) })),
 
   quickCreate: { open: false, defaults: {} },
-  openQuickCreate: (defaults = {}) => set({ quickCreate: { open: true, defaults } }),
+  // Antes do primeiro carregamento nada pode ser salvo: a tarefa criada se perderia.
+  openQuickCreate: (defaults = {}) => set((state) => (state.hydrated ? { quickCreate: { open: true, defaults } } : state)),
   closeQuickCreate: () => set((state) => ({ quickCreate: { ...state.quickCreate, open: false } })),
 
   taskFilters: DEFAULT_TASK_FILTERS,
