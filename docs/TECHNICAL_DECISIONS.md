@@ -278,6 +278,17 @@ Diálogo próprio "Registrar acompanhamento" (`follow-up-dialog.tsx`) que reapro
 **Alternativas consideradas:**
 Reutilizar o modal de andamento com flags de modo (mais campos irrelevantes e lógica condicional); exigir reabrir a tarefa (muda o status de algo que já foi entregue).
 
+## Campos da criação rápida
+
+**Contexto:**
+O §15 pede só título, projeto e prazo. Na prática, o mapa de urgência, "Para revisar" e "Para fazer hoje" dependem de prioridade, revisão e foco, que ficavam de fora, e toda tarefa nascia como Normal.
+
+**Escolha:**
+A criação ganha esses três campos, todos opcionais. Só o título é obrigatório, e Enter continua criando. Status fica de fora: toda tarefa nasce em A fazer, e mudar para Aguardando pede quem e quando revisar, o que a tela aberta em seguida já oferece.
+
+**Alternativas consideradas:**
+Esconder os campos em "Mais opções" (o usuário não encontraria a prioridade, que foi justamente o problema).
+
 ## Criação rápida abre a tarefa criada
 
 **Contexto:**

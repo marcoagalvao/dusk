@@ -48,6 +48,7 @@ export function StatusControl({ task, disabled, onRequestWaiting }: StatusContro
     <DropdownMenu>
       <DropdownMenuTrigger className={CHIP_TRIGGER} disabled={disabled} aria-label={`Status: ${STATUS_LABELS[task.status]}. Alterar status`}>
         <StatusBadge status={task.status} />
+        {!disabled && <ChevronDown aria-hidden="true" className="size-3 text-ink-subtle" />}
       </DropdownMenuTrigger>
       <DropdownMenuContent align="start">
         <DropdownMenuLabel>Status</DropdownMenuLabel>
@@ -75,7 +76,9 @@ export function PriorityControl({ task, disabled }: { task: Task; disabled?: boo
   return (
     <DropdownMenu>
       <DropdownMenuTrigger className={CHIP_TRIGGER} disabled={disabled} aria-label={`Prioridade: ${PRIORITY_LABELS[task.priority]}. Alterar prioridade`}>
+        <span className="text-label text-ink-muted">Prioridade</span>
         <PriorityBadge priority={task.priority} />
+        {!disabled && <ChevronDown aria-hidden="true" className="size-3 text-ink-subtle" />}
       </DropdownMenuTrigger>
       <DropdownMenuContent align="start">
         <DropdownMenuLabel>Prioridade</DropdownMenuLabel>

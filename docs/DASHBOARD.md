@@ -12,12 +12,13 @@ Valem para qualquer bloco novo:
 2. **No máximo uma frase de explicação**, dizendo como ler o bloco. Use `TileHeading` (`tile.tsx`).
 3. **O mais importante vem primeiro:** a situação do dia, depois o que fazer, depois o quadro geral e por fim o relatório.
 4. **Zero fica apagado**, para o olho ir ao que importa.
-5. **Número clicável:** todo contador abre a lista com o filtro correspondente (`FilterLink`).
-6. **Nada depende só de cor ou de hover:** cada cor tem legenda, cada valor aparece escrito e o tooltip só complementa.
-7. **Comparações por extenso:** "2 a mais que nos 7 dias anteriores", nunca "+2 vs" ou "p.p.".
-8. **Sem jargão:** "Aguardando resposta de quem", não "Dependências".
-9. **Contraste:** texto explicativo usa `ink-muted`. `ink-subtle` fica só para o que pode sumir, como zeros e ícones.
-10. **Funciona em 375 px** sem rolagem horizontal. Títulos do calendário quebram em até duas linhas.
+5. **Número clicável:** os contadores do resumo, do mapa de urgência e dos status abrem a lista com o filtro correspondente (`FilterLink`). Exceções ainda pendentes estão em `FEATURES.md`.
+6. **Todo dado do painel pode ser informado ao criar a tarefa:** ao adicionar um bloco baseado em um campo novo, inclua esse campo na criação rápida. O status é a exceção: toda tarefa nasce em A fazer, e a tela aberta logo depois permite mudá-lo.
+7. **Nada depende só de cor ou de hover:** cada cor tem legenda, cada valor aparece escrito e o tooltip só complementa.
+8. **Comparações por extenso:** "2 a mais que nos 7 dias anteriores", nunca "+2 vs" ou "p.p.".
+9. **Sem jargão:** "Aguardando resposta de quem", não "Dependências".
+10. **Contraste:** texto explicativo usa `ink-muted`. `ink-subtle` fica só para o que pode sumir, como zeros e ícones.
+11. **Funciona em 375 px** sem rolagem horizontal. Títulos do calendário quebram em até duas linhas.
 
 ## Blocos, de cima para baixo
 

@@ -31,7 +31,7 @@ Painel para entender o dia de relance. Blocos, métricas e regras em [`DASHBOARD
 
 ## Tarefas
 
-- **Criação rápida:** tecla `N`, botão ou `+` no celular. Só o título é obrigatório; projeto e prazo são opcionais. Enter cria, e o app abre a tarefa criada.
+- **Criação rápida:** tecla `N`, botão ou `+` no celular. Só o título é obrigatório. Projeto, prioridade (padrão Normal), prazo, revisão e foco de hoje são opcionais. Criando a partir da vista Hoje, o foco já vem marcado. Enter cria, e o app abre a tarefa criada.
 - **Detalhe** (`/tasks/[id]`): próxima ação em destaque, aguardando, último avanço, subtarefas, histórico e controles de status, prioridade, projeto, prazo e revisão. O "voltar" retorna à última lista visitada.
 - **Concluir em um clique** no glifo de status, com desfazer no toast. Reabrir registra evento no histórico.
 - **Arquivar e restaurar**, com desfazer. **Excluir** pede confirmação.
@@ -87,6 +87,8 @@ Painel para entender o dia de relance. Blocos, métricas e regras em [`DASHBOARD
 | Bloquear novos cadastros no Supabase | Recomendado, a ser feito pelo dono do projeto (ver `SETUP.md`) |
 | Arraste por toque no Kanban | Configurado, mas não testado em aparelho físico |
 | Formato do seletor de data | Nativo: segue o idioma do navegador |
+| Blocos do relatório sem clique | "Concluídas por projeto" e "Há quanto tempo estão abertas" não abrem lista. "Aguardando resposta de quem" abre todas as aguardando, não só as da pessoa. "+N tarefas" no calendário não é link |
+| Prioridade nas listas | Normal e Baixa não aparecem nas linhas nem nos cards, e mudar a prioridade exige abrir a tarefa |
 
 ## Backlog
 
