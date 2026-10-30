@@ -12,7 +12,7 @@ Valem para qualquer bloco novo:
 2. **No máximo uma frase de explicação**, dizendo como ler o bloco. Use `TileHeading` (`tile.tsx`).
 3. **O mais importante vem primeiro:** a situação do dia, depois o que fazer, depois o quadro geral e por fim o relatório.
 4. **Zero fica apagado**, para o olho ir ao que importa.
-5. **Número clicável:** os contadores do resumo, do mapa de urgência e dos status abrem a lista com o filtro correspondente (`FilterLink`). Exceções ainda pendentes estão em `FEATURES.md`.
+5. **Número clicável:** todo número que conta tarefas abre a lista com o que foi contado (`FilterLink`). Contadores com filtro equivalente usam esse filtro. Blocos sem filtro equivalente (concluídas por projeto, tempo em aberto, quem você aguarda, "+N tarefas" do calendário) usam `selection`, com os ids das próprias tarefas. Os totais do relatório e os gráficos de atividade são a exceção: mostram tendência, não uma lista. Número zerado não abre nada.
 6. **Todo dado do painel pode ser informado ao criar a tarefa:** ao adicionar um bloco baseado em um campo novo, inclua esse campo na criação rápida. O status é a exceção: toda tarefa nasce em A fazer, e a tela aberta logo depois permite mudá-lo.
 7. **Nada depende só de cor ou de hover:** cada cor tem legenda, cada valor aparece escrito e o tooltip só complementa.
 8. **Comparações por extenso:** "2 a mais que nos 7 dias anteriores", nunca "+2 vs" ou "p.p.".

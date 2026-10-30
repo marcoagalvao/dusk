@@ -257,6 +257,7 @@ function ActiveFilterChips({ hideStatusFilters }: { hideStatusFilters?: boolean 
   const projectsById = useProjectMap();
 
   const chips: Array<{ key: string; label: string; clear: Partial<TaskFilters> }> = [];
+  if (filters.selection) chips.push({ key: "selection", label: filters.selection.label, clear: { selection: null } });
   if (!hideStatusFilters && filters.completion !== "open") {
     chips.push({ key: "completion", label: COMPLETION_FILTER_LABELS[filters.completion], clear: { completion: "open" } });
   }

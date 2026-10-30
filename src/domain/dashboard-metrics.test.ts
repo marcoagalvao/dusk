@@ -224,12 +224,52 @@ describe("periodReport", () => {
     ]);
   });
 
+  it("cada linha de projeto sabe quais tarefas contou, inclusive em Outros", () => {
+    const projects = ["p1", "p2", "p3", "p4", "p5", "p6"].map((id) => ({
+      id,
+      name: id,
+      color: "lavender",
+      createdAt: at(TODAY),
+      updatedAt: at(TODAY),
+    })) as Project[];
+    const report = periodReport(
+      [
+        done("a", TODAY, { projectId: "p1" }),
+        done("b", TODAY, { projectId: "p1" }),
+        done("c", TODAY, { projectId: "p2" }),
+        done("d", TODAY, { projectId: "p3" }),
+        done("e", TODAY, { projectId: "p4" }),
+        done("f", TODAY, { projectId: "p5" }),
+        done("g", TODAY, { projectId: "p6" }),
+        done("h", TODAY, { projectId: "removido" }),
+      ],
+      projects,
+      TODAY,
+      7,
+    );
+    expect(report.byProject[0].taskIds).toEqual(["a", "b"]);
+    const others = report.byProject.at(-1)!;
+    expect(others.name).toBe("Outros");
+    expect(others.taskIds).toHaveLength(others.completed);
+    expect(report.byProject.flatMap((row) => row.taskIds).sort()).toEqual(["a", "b", "c", "d", "e", "f", "g", "h"]);
+  });
+
   it("arquivar não apaga a entrega do relatório", () => {
     expect(periodReport([done("a", TODAY, { archivedAt: at(TODAY) })], [], TODAY, 7).completed).toBe(1);
   });
 });
 
 describe("agingBuckets", () => {
+  it("cada faixa sabe quais tarefas contou", () => {
+    const buckets = agingBuckets(
+      [task("nova", { createdAt: at("2026-10-29") }), task("velha", { createdAt: at("2026-08-01") })],
+      TODAY,
+    );
+    expect(buckets[0].taskIds).toEqual(["nova"]);
+    expect(buckets[1].taskIds).toEqual([]);
+    expect(buckets[4].taskIds).toEqual(["velha"]);
+  });
+
   it("distribui as tarefas abertas pela idade", () => {
     const buckets = agingBuckets(
       [
@@ -270,6 +310,18 @@ describe("activityHeatmap", () => {
 });
 
 describe("waitingByPerson", () => {
+  it("cada pessoa sabe quais tarefas contou, juntando grafias diferentes", () => {
+    const people = waitingByPerson(
+      [
+        task("a", { status: "waiting", waitingFor: "José" }),
+        task("b", { status: "waiting", waitingFor: "jose" }),
+        task("c", { status: "waiting", waitingFor: "Ana" }),
+      ],
+      TODAY,
+    );
+    expect(people.map((person) => person.taskIds)).toEqual([["a", "b"], ["c"]]);
+  });
+
   it("agrupa ignorando maiúsculas e acentos, com quem deve mais primeiro", () => {
     const people = waitingByPerson(
       [

@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import type { Project } from "./project";
 import type { Task } from "./task";
 import {
+  countActiveFilters,
   DEFAULT_TASK_FILTERS,
   NO_PROJECT,
   filterTasks,
@@ -125,6 +126,29 @@ describe("sortTasks (inteligente)", () => {
 });
 
 describe("filterTasks", () => {
+  describe("recorte vindo do painel", () => {
+    const open = task({ title: "Aberta" });
+    const done = task({ title: "Concluída", status: "completed", completedAt: "2026-09-20T12:00:00" });
+    const archived = task({ title: "Arquivada", status: "completed", completedAt: "2026-09-20T12:00:00", archivedAt: "2026-10-01T00:00:00.000Z" });
+    const other = task({ title: "Fora do recorte" });
+    const all = [open, done, archived, other];
+    const selection = { label: "Recorte", taskIds: [open.id, done.id, archived.id] };
+
+    it("mostra exatamente as tarefas contadas, mesmo concluídas ou arquivadas", () => {
+      const result = filterTasks(all, { ...DEFAULT_TASK_FILTERS, selection }, projectsById, TODAY);
+      expect(result.map((item) => item.title)).toEqual(["Aberta", "Concluída", "Arquivada"]);
+    });
+
+    it("ainda respeita os outros filtros", () => {
+      const result = filterTasks(all, { ...DEFAULT_TASK_FILTERS, selection, status: "completed" }, projectsById, TODAY);
+      expect(result.map((item) => item.title)).toEqual(["Concluída", "Arquivada"]);
+    });
+
+    it("conta como filtro ativo", () => {
+      expect(countActiveFilters({ ...DEFAULT_TASK_FILTERS, selection })).toBe(1);
+    });
+  });
+
   it("'Concluídas hoje' mostra só o que foi concluído hoje", () => {
     const doneToday = task({ status: "completed", completedAt: `${TODAY}T12:00:00` });
     const doneBefore = task({ status: "completed", completedAt: "2026-09-20T12:00:00" });

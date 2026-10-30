@@ -49,9 +49,11 @@ Painel para entender o dia de relance. Blocos, métricas e regras em [`DASHBOARD
 
 - **Lista:** agrupada em Hoje, Próximas e Sem data só na ordenação "Inteligente"; nas demais, lista plana.
 - **Kanban:** cinco colunas, com arrastar por mouse, toque e teclado. Concluído mostra os últimos 7 dias. Soltar em Aguardando sem pessoa oferece registrar quem.
+- **Prioridade:** as quatro aparecem em toda linha e todo card, com menu para mudar ali mesmo, sem abrir a tarefa.
 - **Vistas:** Hoje, Próximas, Aguardando e Atrasadas.
 - **Busca** instantânea, ignorando acentos, em título, projeto, último avanço, aguardando, próxima ação e observação.
 - **Filtros:** projeto, status, prioridade, prazo (atrasada, hoje, esta semana, em até 7 dias, mais de 7 dias, sem prazo), foco, revisão vencida e situação (abertas, concluídas, concluídas hoje ou todas). Status específico tem precedência sobre Abertas/Concluídas.
+- **Recorte do painel:** abrir um bloco do painel traz as tarefas contadas, com um filtro próprio que aparece como etiqueta removível. Concluídas arquivadas contadas pelo relatório aparecem marcadas como "Arquivada" e só podem ser abertas; no Kanban elas ficam de fora.
 - **Ordenação:** Inteligente, Prazo, Prioridade, Mais recente, Mais antiga e Alfabética.
 
 ## Projetos
@@ -87,8 +89,6 @@ Painel para entender o dia de relance. Blocos, métricas e regras em [`DASHBOARD
 | Bloquear novos cadastros no Supabase | Recomendado, a ser feito pelo dono do projeto (ver `SETUP.md`) |
 | Arraste por toque no Kanban | Configurado, mas não testado em aparelho físico |
 | Formato do seletor de data | Nativo: segue o idioma do navegador |
-| Blocos do relatório sem clique | "Concluídas por projeto" e "Há quanto tempo estão abertas" não abrem lista. "Aguardando resposta de quem" abre todas as aguardando, não só as da pessoa. "+N tarefas" no calendário não é link |
-| Prioridade nas listas | Normal e Baixa não aparecem nas linhas nem nos cards, e mudar a prioridade exige abrir a tarefa |
 
 ## Backlog
 
