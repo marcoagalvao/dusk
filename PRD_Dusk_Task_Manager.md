@@ -1,3 +1,5 @@
+> **Documento histórico.** Registra a intenção original do produto (V1). A implementação evoluiu: os dados agora ficam no Supabase, com login, e a Home virou um painel visual. O estado atual está em `docs/FEATURES.md`, e as divergências deliberadas em `docs/TECHNICAL_DECISIONS.md`. Em caso de conflito, vale o código.
+
 # PRD — Dusk
 
 > **Personal Task Manager** — gerenciador pessoal de tarefas, projetos e acompanhamentos.

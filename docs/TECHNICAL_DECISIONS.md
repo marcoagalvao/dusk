@@ -1,6 +1,6 @@
 # Decisões técnicas — Dusk
 
-Decisões relevantes que não ficam óbvias só lendo o código.
+Decisões relevantes que não ficam óbvias só lendo o código. Quando uma decisão mudar, reescreva a seção e registre a mudança no `CHANGELOG.md`.
 
 ## Persistência: adapter próprio sob o `persist` do Zustand
 
@@ -8,13 +8,66 @@ Decisões relevantes que não ficam óbvias só lendo o código.
 O PRD pede Zustand + persist middleware (§40) e, ao mesmo tempo, uma interface `AppPersistence` trocável (§42) com estado versionado (§43).
 
 **Escolha:**
-O `persist` recebe um `PersistStorage` customizado (`src/store/persistence.ts`) que delega para `AppPersistence`. A implementação V1 é `LocalStoragePersistence`. O valor gravado em `dusk:v1` é exatamente `{ schemaVersion, tasks, projects, settings }`.
+O `persist` recebe um `PersistStorage` customizado (`src/store/persistence.ts`) que delega para `AppPersistence`, com `load`, `save` e `subscribe` opcional. A implementação em uso é `SyncedPersistence`.
 
 **Motivo:**
-Mantém o middleware do PRD, mas a UI e o store não sabem onde os dados ficam. Trocar por Supabase significa implementar `load/save/clear` (e opcionalmente `subscribe`).
+A UI e o store não sabem onde os dados ficam. A troca do `localStorage` pelo Supabase não exigiu mudar telas nem slices.
 
 **Alternativas consideradas:**
-`createJSONStorage(() => localStorage)` padrão (grava o envelope `{state, version}` do Zustand e acopla o formato à biblioteca); persistência manual com `subscribe` (abandona o middleware pedido no PRD).
+`createJSONStorage(() => localStorage)` padrão (acopla o formato à biblioteca); persistência manual com `subscribe` (abandona o middleware pedido no PRD).
+
+## Banco relacional em vez de um documento JSON
+
+**Contexto:**
+A forma mais simples de levar os dados ao Supabase seria guardar todo o estado numa coluna `jsonb`.
+
+**Escolha:**
+Tabelas `projects`, `tasks`, `subtasks`, `task_updates` e `user_settings`, com chave `(user_id, id)`, constraints e RLS.
+
+**Motivo:**
+Um documento único faria dois dispositivos se sobrescreverem por inteiro. Com linhas, só o item alterado viaja. O banco também valida os dados e permite consultas e relatórios futuros.
+
+**Alternativas consideradas:**
+`jsonb` único (conflitos e sem validação); ids `uuid` (os ids existentes não são todos uuid e nascem no cliente).
+
+## Sincronização por diferença com fila local
+
+**Contexto:**
+O app precisa continuar instantâneo e não pode perder alterações com a rede caída ou a aba fechada.
+
+**Escolha:**
+A tela altera a memória na hora. `SyncedPersistence` calcula a diferença de linhas, grava numa fila em `localStorage` antes de enviar e reenvia até conseguir. Último a gravar vence, por linha. Detalhes em `ARCHITECTURE.md`.
+
+**Motivo:**
+A fila durável é o que torna o app seguro sem conexão. Última gravação por linha é suficiente para um único usuário.
+
+**Alternativas consideradas:**
+Gravar direto e esperar a resposta (lento e frágil sem rede); CRDT ou motor de sync dedicado (complexidade sem retorno para uso pessoal); Supabase Realtime (pode ser adicionado depois; hoje, a leitura ao focar a janela e a cada 60 s basta).
+
+## Login só no cliente, sem cadastro
+
+**Contexto:**
+App pessoal, sem dados no servidor Next e sem rotas de API.
+
+**Escolha:**
+Supabase Auth com sessão em `localStorage`, sem middleware. Só e-mail e senha, e a conta é criada no painel do Supabase.
+
+**Motivo:**
+Como toda leitura e escrita passa pelo RLS, proteger rotas no servidor não acrescentaria segurança. Sem tela de cadastro, não há o que manter.
+
+**Alternativas consideradas:**
+`@supabase/ssr` com cookies (necessário só com renderização de dados no servidor); magic link (depende de e-mail a cada login).
+
+## Importação automática dos dados antigos
+
+**Contexto:**
+Cada navegador pode ter dados diferentes em `dusk:v1`, e o usuário não deve fazer nada para não perdê-los.
+
+**Escolha:**
+Na primeira carga depois do login, uma união por id, com o `updatedAt` mais recente vencendo. A chave antiga é renomeada, nunca apagada.
+
+**Motivo:**
+Abrir o PC e depois o celular soma os dados dos dois sem duplicar. Se algo der errado, a cópia continua no navegador.
 
 ## Validação tolerante com zod
 
@@ -36,7 +89,7 @@ Validação manual (sem dependência, porém mais extensa e propensa a lacunas);
 Se o conteúdo salvo não puder ser lido (JSON quebrado, versão mais nova, itens inválidos), o app precisa continuar funcionando.
 
 **Escolha:**
-Antes de começar vazio ou reparar, o conteúdo original é copiado para `dusk:v1:recovery:<timestamp>` e o usuário recebe um aviso.
+Dados antigos ilegíveis são copiados para `dusk:v1:recovery:<timestamp>`, e o usuário recebe um aviso. Mudanças recusadas pelo banco vão para `dusk:v2:<uid>:rejected`.
 
 **Motivo:**
 Evita perda definitiva de dados por um bug ou por abrir uma versão antiga do app.
@@ -47,15 +100,15 @@ Evita perda definitiva de dados por um bug ou por abrir uma versão antiga do ap
 §43 exige migration explícita para qualquer mudança de formato.
 
 **Escolha:**
-`MIGRATIONS[n]` converte do schema `n` para `n + 1` e `migrateState` aplica a cadeia. O mesmo caminho é usado para localStorage e para importação de backup. Versão futura desconhecida é recusada.
+`MIGRATIONS[n]` converte o JSON do schema `n` para `n + 1`, e `migrateState` aplica a cadeia, em dados legados e em backups. Versão futura desconhecida é recusada. O banco tem migrations SQL próprias, em `supabase/migrations/`.
 
 ## Hidratação manual
 
 **Contexto:**
-Componentes client também renderizam no servidor, onde não existe localStorage.
+Componentes client também renderizam no servidor, onde não há sessão nem `localStorage`, e os dados dependem do usuário logado.
 
 **Escolha:**
-`skipHydration: true` e `StoreHydrator` chama `rehydrate()` após a montagem; até lá o conteúdo mostra um placeholder breve.
+`skipHydration: true` e `useStoreHydration(userId)` conecta a persistência ao usuário e chama `rehydrate()` depois da montagem. Até lá o conteúdo mostra um placeholder breve.
 
 **Motivo:**
 Evita mismatch de hidratação e o flash do estado vazio ("Criar primeira tarefa") para quem já tem dados.
@@ -112,13 +165,13 @@ O modal vem pré-preenchido com o estado atual; repetir a mesma próxima ação 
 ## "Foco de hoje com pendência"
 
 **Contexto:**
-§10 inclui em "Precisa da sua atenção" a "tarefa no foco de hoje com pendência", mas o foco já tem sua própria seção.
+§10 inclui nas tarefas que pedem atenção a "tarefa no foco de hoje com pendência", mas o foco já aparece no que fazer hoje.
 
 **Escolha:**
 Interpretado como tarefa do foco que está em Aguardando (depende de terceiros). Bloqueadas já entram por regra própria.
 
 **Motivo:**
-Evita duplicar a seção de foco inteira dentro de "Precisa da sua atenção".
+Evita repetir todo o foco entre as tarefas que pedem atenção.
 
 ## Filtro de status tem precedência sobre Abertas/Concluídas
 
@@ -196,10 +249,10 @@ Garante dados sempre válidos e coerentes com o schema, e permite avaliar o app 
 ## Sincronização entre abas
 
 **Escolha:**
-O adapter expõe `subscribe` (evento `storage`). Quando outra aba grava, esta recarrega; quando outra aba apaga tudo, esta zera a memória também. A escrita é ignorada quando o conteúdo é idêntico, e cada conteúdo problemático é preservado e avisado uma única vez.
+Não há canal direto entre abas. Cada aba grava só as próprias diferenças e lê o banco ao ganhar foco, ao voltar a ficar visível e a cada 60 s.
 
 **Motivo:**
-Evita que uma aba antiga sobrescreva as alterações da outra ou ressuscite dados apagados.
+O mesmo mecanismo serve para abas e dispositivos, e uma aba antiga não sobrescreve nem ressuscita o que outra alterou, pois só envia o que ela mesma mudou.
 
 ## Lembrete de revisão dentro do app
 
@@ -207,9 +260,9 @@ Evita que uma aba antiga sobrescreva as alterações da outra ou ressuscite dado
 O usuário pediu para ser avisado quando chega o dia de revisar. Notificação push está fora da V1 (PRD §7).
 
 **Escolha:**
-Seção "Revisões" na Home (vencidas, hoje e próximos 7 dias) e um toast ao abrir o app quando há revisões vencidas ou de hoje. O dia do aviso fica no ui-store (memória), então ele aparece uma vez por dia em cada sessão e também quando o dia vira com o app aberto.
+Seção "Para revisar em breve" na Home (vencidas, hoje e próximos 7 dias) e um toast ao abrir o app quando há revisões vencidas ou de hoje. O dia do aviso fica no ui-store (memória), então ele aparece uma vez por dia em cada sessão e também quando o dia vira com o app aberto.
 
-Tarefas **concluídas com data de revisão também geram lembrete** (decisão do usuário após uso real): a revisão pode ser um acompanhamento depois da entrega, como confirmar com o cliente. Elas aparecem na seção "Revisões" marcadas como "Concluída", contam no aviso, entram no filtro "Revisão vencida" e o chip de revisão no detalhe é destacado. Já "Precisa da sua atenção" e a ordenação inteligente continuam considerando só tarefas abertas (`isReviewDue`), seguindo o §10; a regra ampla é `isReviewReached`. Em linhas de tarefas concluídas, a data mostrada é a de revisão (o prazo deixa de importar).
+Tarefas **concluídas com data de revisão também geram lembrete** (decisão do usuário após uso real): a revisão pode ser um acompanhamento depois da entrega, como confirmar com o cliente. Elas aparecem nessa seção marcadas como "Concluída", contam no aviso, entram no filtro "Revisão vencida" e o chip de revisão no detalhe é destacado. Já "Também pedem atenção" e a ordenação inteligente continuam considerando só tarefas abertas (`isReviewDue`), seguindo o §10; a regra ampla é `isReviewReached`. Em linhas de tarefas concluídas, a data mostrada é a de revisão (o prazo deixa de importar).
 
 **Alternativas consideradas:**
 Gravar o "último aviso" no estado persistido (exigiria campo novo no schema para um detalhe de UI); Notification API do navegador (pede permissão e equivale a push, fora do escopo).
@@ -254,3 +307,36 @@ Campo opcional `displayName` em `AppSettings`, editável em Configurações. Sem
 
 **Motivo:**
 Atende o exemplo do PRD com uma adição mínima e compatível (campo opcional não exige migration).
+
+## Painel sem biblioteca de gráficos
+
+**Contexto:**
+A visão geral passou a ter gráficos de barras, anel, mapa de calor e barra empilhada.
+
+**Escolha:**
+HTML e SVG feitos à mão em `src/components/dashboard/charts.tsx`, com tokens próprios (`--color-chart-*`) validados contra daltonismo.
+
+**Motivo:**
+São formas simples, e uma biblioteca aumentaria o bundle e exigiria sobrescrever quase todo o visual.
+
+**Alternativas consideradas:**
+Recharts ou Chart.js (peso e estilo difícil de alinhar ao tema).
+
+## "Para fazer hoje" reúne foco e atenção
+
+**Contexto:**
+A Home tinha seções separadas de foco, atenção e resumo. O número do resumo não batia com a lista.
+
+**Escolha:**
+A lista se divide em "Para fazer hoje", com o mesmo recorte de `/tasks/today` e do número grande, e "Também pedem atenção", com o restante de `getTodayAgenda`.
+
+**Motivo:**
+O número em destaque precisa coincidir com o que está na lista logo ao lado.
+
+## Relatório em períodos móveis
+
+**Escolha:**
+Semana, Quinzena e Mês são os últimos 7, 15 e 30 dias, comparados aos N dias anteriores, e não semana ou mês de calendário.
+
+**Motivo:**
+Um período de calendário fica quase vazio no começo e distorce a comparação. Períodos móveis sempre comparam a mesma quantidade de dias.

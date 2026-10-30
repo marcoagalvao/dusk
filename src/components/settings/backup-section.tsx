@@ -56,7 +56,7 @@ export function BackupSection() {
     <>
       <SettingsRow
         title="Exportar backup"
-        description="Baixa um arquivo .json com todas as tarefas, projetos e configurações. É a forma de levar seus dados para outro navegador ou dispositivo."
+        description="Baixa um arquivo .json com todas as tarefas, projetos e configurações. Uma cópia sua, fora do banco, para guardar onde quiser."
         action={
           <Button onClick={exportBackup}>
             <Download aria-hidden="true" className="size-4" />

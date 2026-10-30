@@ -42,6 +42,16 @@
   --color-project-sage: #afc9b5;
   --color-project-sand: #d9c7a8;
 
+  /*
+   * Marcas de gráfico: os mesmos matizes dos status, mais profundos, porque os
+   * tons pastel não se distinguem sob daltonismo (validado com a skill dataviz).
+   * A ordem A fazer → Aguardando → Em andamento → Bloqueado alterna quente/frio.
+   */
+  --color-chart-todo: #a48bdc;
+  --color-chart-waiting: #e0a066;
+  --color-chart-progress: #6f9fdc;
+  --color-chart-blocked: #d9788c;
+
   /* Tipografia */
   --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
   --font-mono: var(--font-geist-mono), ui-monospace, monospace;
@@ -62,6 +72,8 @@
   --text-page--line-height: 32px;
   --text-hero: 30px;
   --text-hero--line-height: 36px;
+  --text-display: 56px;
+  --text-display--line-height: 56px;
 
   /* Raios */
   --radius-card: 12px;

@@ -125,6 +125,14 @@ describe("sortTasks (inteligente)", () => {
 });
 
 describe("filterTasks", () => {
+  it("'Concluídas hoje' mostra só o que foi concluído hoje", () => {
+    const doneToday = task({ status: "completed", completedAt: `${TODAY}T12:00:00` });
+    const doneBefore = task({ status: "completed", completedAt: "2026-09-20T12:00:00" });
+    const open = task();
+    const result = filterTasks([doneToday, doneBefore, open], { ...DEFAULT_TASK_FILTERS, completion: "today" }, projectsById, TODAY);
+    expect(result.map((item) => item.id)).toEqual([doneToday.id]);
+  });
+
   const tasks = [
     task({ title: "Revisão do site", projectId: "p1", status: "waiting", waitingFor: "Pedro" }),
     task({ title: "Enviar proposta", priority: "high" }),

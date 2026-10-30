@@ -144,14 +144,11 @@ describe("LocalStoragePersistence", () => {
     return { storage, onIssue, persistence };
   }
 
-  it("salva e carrega na chave dusk:v1", () => {
-    const { storage, persistence } = setup();
-    expect(persistence.load()).toBeNull();
+  it("carrega da chave dusk:v1", () => {
+    expect(setup().persistence.load()).toBeNull();
     const parsed = parsePersistedState(validState);
     if (!parsed.ok) throw new Error("esperava ok");
-    persistence.save(parsed.state);
-    expect(storage.getItem("dusk:v1")).not.toBeNull();
-    expect(persistence.load()).toEqual(parsed.state);
+    expect(setup(JSON.stringify(validState)).persistence.load()).toEqual(parsed.state);
   });
 
   it("preserva conteúdo corrompido antes de começar vazio", () => {
@@ -160,6 +157,15 @@ describe("LocalStoragePersistence", () => {
     expect(onIssue).toHaveBeenCalledWith(expect.objectContaining({ kind: "unreadable" }));
     const recoveryKey = storage.keys().find((key) => key.startsWith("dusk:v1:recovery:"));
     expect(recoveryKey && storage.getItem(recoveryKey)).toBe("{not json");
+  });
+
+  it("tira da chave ativa o conteúdo ilegível já preservado: outra carga da página não repete o aviso", () => {
+    const { storage, onIssue } = setup("{not json");
+    new LocalStoragePersistence({ getStorage: () => storage, onIssue }).load();
+    new LocalStoragePersistence({ getStorage: () => storage, onIssue }).load();
+    expect(storage.getItem(STORAGE_KEY)).toBeNull();
+    expect(onIssue).toHaveBeenCalledTimes(1);
+    expect(storage.keys().filter((key) => key.includes(":recovery:"))).toHaveLength(1);
   });
 
   it("não duplica cópia nem aviso ao recarregar o mesmo conteúdo ruim", () => {
@@ -180,22 +186,5 @@ describe("LocalStoragePersistence", () => {
     const { onIssue, persistence } = setup(JSON.stringify({ ...validState, tasks: [validTask, { bad: true }] }));
     expect(persistence.load()?.tasks).toHaveLength(1);
     expect(onIssue).toHaveBeenCalledWith(expect.objectContaining({ kind: "repaired", droppedItems: 1 }));
-  });
-
-  it("reporta falha de escrita sem lançar", () => {
-    const { storage, onIssue, persistence } = setup();
-    storage.setItem = () => {
-      throw new Error("QuotaExceededError");
-    };
-    const parsed = parsePersistedState(validState);
-    if (!parsed.ok) throw new Error("esperava ok");
-    expect(() => persistence.save(parsed.state)).not.toThrow();
-    expect(onIssue).toHaveBeenCalledWith({ kind: "write-failed" });
-  });
-
-  it("clear remove os dados", () => {
-    const { storage, persistence } = setup(JSON.stringify(validState));
-    persistence.clear();
-    expect(storage.getItem(STORAGE_KEY)).toBeNull();
   });
 });

@@ -2,7 +2,7 @@ import type { PersistedAppState } from "@/domain/app-data";
 import { nowIso } from "@/lib/dates";
 
 import { parsePersistedState } from "./schema";
-import type { AppPersistence, PersistenceIssue } from "./types";
+import type { PersistenceIssue } from "./types";
 
 export const STORAGE_KEY = "dusk:v1";
 
@@ -12,7 +12,7 @@ interface LocalStoragePersistenceOptions {
   onIssue?: (issue: PersistenceIssue) => void;
 }
 
-function defaultStorage(): Storage | null {
+export function defaultStorage(): Storage | null {
   try {
     return typeof window === "undefined" ? null : window.localStorage;
   } catch {
@@ -21,7 +21,11 @@ function defaultStorage(): Storage | null {
   }
 }
 
-export class LocalStoragePersistence implements AppPersistence {
+/**
+ * Formato antigo, de quando os dados viviam só no navegador. Hoje serve apenas
+ * para ler o que ainda está em `dusk:v1` e levar para o banco (`LegacySource`).
+ */
+export class LocalStoragePersistence {
   private readonly key: string;
   private readonly getStorage: () => Storage | null;
   private readonly onIssue: (issue: PersistenceIssue) => void;
@@ -50,7 +54,7 @@ export class LocalStoragePersistence implements AppPersistence {
     try {
       json = JSON.parse(raw);
     } catch {
-      this.report(storage, raw, (recoveryKey) => ({ kind: "unreadable", recoveryKey }));
+      this.report(storage, raw, (recoveryKey) => ({ kind: "unreadable", recoveryKey }), { drop: true });
       return null;
     }
 
@@ -58,6 +62,7 @@ export class LocalStoragePersistence implements AppPersistence {
     if (!result.ok) {
       this.report(storage, raw, (recoveryKey) =>
         result.reason === "newer" ? { kind: "newer-version", recoveryKey } : { kind: "unreadable", recoveryKey },
+        { drop: true },
       );
       return null;
     }
@@ -73,42 +78,32 @@ export class LocalStoragePersistence implements AppPersistence {
     return result.state;
   }
 
-  save(state: PersistedAppState): void {
+  /** Tira os dados da chave ativa depois de importados, mantendo uma cópia. */
+  archive(): void {
     const storage = this.getStorage();
-    if (!storage) return;
-
-    const serialized = JSON.stringify(state);
+    const raw = storage?.getItem(this.key);
+    if (!storage || raw === null || raw === undefined) return;
     try {
-      // Evita escritas redundantes (e eventos `storage` em outras abas).
-      if (storage.getItem(this.key) === serialized) return;
-      storage.setItem(this.key, serialized);
+      storage.setItem(`${this.key}:imported:${nowIso()}`, raw);
+      storage.removeItem(this.key);
     } catch {
       this.onIssue({ kind: "write-failed" });
     }
-  }
-
-  clear(): void {
-    try {
-      this.getStorage()?.removeItem(this.key);
-    } catch {
-      this.onIssue({ kind: "write-failed" });
-    }
-  }
-
-  subscribe(onExternalChange: () => void): () => void {
-    if (typeof window === "undefined") return () => {};
-    const handler = (event: StorageEvent) => {
-      if (event.key === this.key || event.key === null) onExternalChange();
-    };
-    window.addEventListener("storage", handler);
-    return () => window.removeEventListener("storage", handler);
   }
 
   /** Preserva o original e avisa uma única vez por conteúdo problemático. */
-  private report(storage: Storage, raw: string, toIssue: (recoveryKey?: string) => PersistenceIssue): void {
+  private report(
+    storage: Storage,
+    raw: string,
+    toIssue: (recoveryKey?: string) => PersistenceIssue,
+    { drop = false }: { drop?: boolean } = {},
+  ): void {
     if (raw === this.lastReportedRaw) return;
     this.lastReportedRaw = raw;
-    this.onIssue(toIssue(this.preserve(storage, raw)));
+    const recoveryKey = this.preserve(storage, raw);
+    // Sem isso, cada abertura da página repetiria o aviso e criaria outra cópia.
+    if (drop && recoveryKey) storage.removeItem(this.key);
+    this.onIssue(toIssue(recoveryKey));
   }
 
   /** Guarda uma cópia do conteúdo original antes de descartá-lo ou repará-lo. */

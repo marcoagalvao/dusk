@@ -7,6 +7,7 @@ import { cn } from "@/lib/utils/cn";
 const WIDTHS = {
   narrow: "max-w-3xl",
   default: "max-w-5xl",
+  dashboard: "max-w-7xl",
   wide: "max-w-[1600px]",
 } as const;
 
