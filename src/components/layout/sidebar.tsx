@@ -12,6 +12,7 @@ import {
   Settings,
   type LucideIcon,
 } from "lucide-react";
+import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useMemo, type ReactNode } from "react";
@@ -92,14 +93,15 @@ export function Sidebar({ className }: { className?: string }) {
     <aside
       aria-label="Navegação principal"
       className={cn(
-        "sticky top-0 h-dvh shrink-0 flex-col border-r border-line/70 bg-surface transition-[width] duration-220",
+        "sticky top-0 h-dvh shrink-0 flex-col border-r border-line/70 bg-surface/75 transition-[width] duration-220",
         collapsed ? "w-16" : "w-[248px]",
         className,
       )}
     >
       <div className={cn("flex h-16 items-center", collapsed ? "justify-center" : "justify-between pr-2 pl-5")}>
         {!collapsed && (
-          <Link href="/" className="focus-ring rounded-[6px] text-[19px] font-semibold tracking-[-0.03em] text-ink">
+          <Link href="/" className="focus-ring flex items-center gap-2 rounded-[6px] text-[19px] font-semibold tracking-[-0.03em] text-ink">
+            <Image src="/logo.png" alt="" width={26} height={26} className="size-6.5 object-contain" />
             Dusk
           </Link>
         )}
@@ -117,7 +119,7 @@ export function Sidebar({ className }: { className?: string }) {
           onClick={() => openQuickCreate()}
           title={collapsed ? "Nova tarefa (N)" : undefined}
           className={cn(
-            "focus-ring flex h-10 w-full items-center gap-2 rounded-control bg-primary font-medium text-on-primary transition-colors duration-120 hover:bg-primary-hover",
+            "dusk-action focus-ring flex h-10 w-full items-center gap-2 rounded-control bg-primary font-medium text-on-primary",
             collapsed ? "justify-center" : "px-3 text-compact",
           )}
         >

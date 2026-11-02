@@ -4,6 +4,15 @@ Todas as mudanças relevantes do Dusk, da mais recente para a mais antiga. Forma
 
 Toda mudança entra aqui na mesma entrega, com a data. As regras estão em [`AGENTS.md`](AGENTS.md).
 
+## [1.5.0] - 2026-11-02
+
+O app continua de onde a tela de login para: o sol acabou de se pôr.
+
+### Alterado
+- Fundo novo em todas as telas: as primeiras estrelas no alto e a luz do pôr do sol no pé da tela, com o topo do sol aparecendo na borda. O brilho muda devagar, e o fundo fica parado para quem pede menos movimento no sistema.
+- Menu lateral translúcido, para o fundo aparecer também nele, e com a logo ao lado do nome.
+- "Nova tarefa" no menu lateral e o botão + do celular ganharam o mesmo degradê do botão Entrar.
+
 ## [1.4.0] - 2026-11-02
 
 Tela de login nova, com um entardecer animado nas cores do Dusk, e logo própria em todo o app.

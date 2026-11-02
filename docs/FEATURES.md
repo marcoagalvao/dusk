@@ -22,6 +22,11 @@ A interface usa sempre estas palavras, explicadas ao usuário em `/help` (Como f
 - Na primeira entrada em cada navegador, os dados antigos do `localStorage` são levados para o banco, automaticamente e sem duplicar.
 - Sair não apaga nada do banco e é cancelado se ainda houver alteração sem enviar ou se o Supabase não confirmar a saída.
 
+## Aparência
+
+- Depois do login, todas as telas ficam sobre o mesmo fundo fixo (`AppBackdrop`): estrelas no alto e a luz do pôr do sol no pé da tela. Com "reduzir movimento" no sistema, o fundo fica parado.
+- "Nova tarefa" no menu lateral e o botão + do celular usam o degradê da marca (`dusk-action`).
+
 ## Visão geral (`/`)
 
 Painel para entender o dia de relance. Blocos, métricas e regras em [`DASHBOARD.md`](DASHBOARD.md).
