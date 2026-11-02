@@ -16,6 +16,7 @@ A interface usa sempre estas palavras, explicadas ao usuário em `/help` (Como f
 ## Conta e dados
 
 - Login por e-mail e senha, sem cadastro na interface. Um usuário por conta, com dados isolados por RLS.
+- A tela de login é uma cena de pôr do sol animada (`src/components/auth/login-view.css`). O sol desce enquanto o login é enviado e volta se falhar. Com "reduzir movimento" no sistema, a cena fica parada. O foco automático no e-mail só acontece com mouse ou trackpad, para o teclado do celular não cobrir a tela. A logo é `public/logo.png`. Os ícones são gerados a partir dela: `src/app/icon.png` (aba do navegador), `src/app/apple-icon.png` (iPhone) e `public/icon-192.png` e `public/icon-512.png` (app instalado e avisos). Ao trocar a logo, gere esses arquivos de novo.
 - Dados no Supabase, disponíveis em qualquer dispositivo. Alterações sem conexão ficam numa fila e são enviadas depois.
 - Indicador de sincronização (`SyncBadge`): salvando, salvo ou sem conexão.
 - Na primeira entrada em cada navegador, os dados antigos do `localStorage` são levados para o banco, automaticamente e sem duplicar.
@@ -98,7 +99,6 @@ Painel para entender o dia de relance. Blocos, métricas e regras em [`DASHBOARD
 
 | Item | Situação |
 | --- | --- |
-| Bloquear novos cadastros no Supabase | Recomendado, a ser feito pelo dono do projeto (ver `SETUP.md`) |
 | Arraste por toque no quadro | Configurado, mas não testado em aparelho físico |
 | Formato do seletor de data | Nativo: segue o idioma do navegador |
 

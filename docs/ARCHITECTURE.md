@@ -22,7 +22,7 @@ Componente ─► actions/* ─► store Zustand ─► persist (store/persisten
 | --- | --- |
 | `src/app/` | Rotas. Páginas finas que renderizam as views |
 | `src/components/layout/` | `AppShell` (portão de login e estados de carga), sidebar, navegação mobile, `PageContainer` |
-| `src/components/auth/` | `LoginView`, `useAuthUser` |
+| `src/components/auth/` | `LoginView` e a cena dela (`login-view.css`, importado por `globals.css`), `useAuthUser` |
 | `src/components/dashboard/` | Painel da visão geral (ver `DASHBOARD.md`) |
 | `src/components/tasks/`, `projects/`, `archive/`, `settings/`, `help/` | Telas de cada área |
 | `src/components/ui/` | Componentes-base, incluindo `SyncBadge` |

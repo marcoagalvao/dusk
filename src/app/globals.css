@@ -1,4 +1,5 @@
 @import "tailwindcss";
+@import "../components/auth/login-view.css";
 
 /*
  * Pastel Dusk — tokens oficiais (PRD §50–58, §79).

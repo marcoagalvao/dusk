@@ -4,6 +4,18 @@ Todas as mudanças relevantes do Dusk, da mais recente para a mais antiga. Forma
 
 Toda mudança entra aqui na mesma entrega, com a data. As regras estão em [`AGENTS.md`](AGENTS.md).
 
+## [1.4.0] - 2026-11-02
+
+Tela de login nova, com um entardecer animado nas cores do Dusk, e logo própria em todo o app.
+
+### Alterado
+- O login virou uma cena de pôr do sol, com o nome Dusk em silhueta sobre o horizonte. O degradê do céu muda devagar, as estrelas piscam e o sol se reflete na água. A tela funciona no computador e no celular, e fica parada para quem pede menos movimento no sistema.
+- Ao clicar em Entrar, o sol desce e uma luz corre no horizonte até a resposta chegar. Se o login falhar, o sol volta, o painel treme de leve e a mensagem aparece com ícone.
+- No celular, o campo de e-mail não recebe mais foco ao abrir a tela, para o teclado não cobrir a cena.
+
+### Adicionado
+- Logo nova, o sol sobre um sinal de concluído, na tela de login, na aba do navegador, no app instalado e nos avisos.
+
 ## [1.3.0] - 2026-11-02
 
 Revisão de usabilidade: as regras ficaram previsíveis, as palavras ficaram iguais em todas as telas e o que faltava para o uso diário entrou. Requer a migration `0003_recurrence_and_push.sql` no Supabase antes do deploy: sem ela, o banco recusa as tarefas salvas pela nova versão.
@@ -38,6 +50,7 @@ Revisão de usabilidade: as regras ficaram previsíveis, as palavras ficaram igu
 
 ### Conferido em produção
 - Login, migrations e variáveis da Vercel funcionando, com a notificação do resumo diário entregue em um celular real.
+- Novos cadastros bloqueados no Supabase pelo dono do projeto.
 
 ### Segurança
 - Next.js atualizado de 16.3.8 para 16.4.3 e zod de 4.6.5 para 4.6.7, para corrigir falhas conhecidas nessas bibliotecas (GHSA-2464-fhr4-w9xw, GHSA-673q-mjm6-r5xr, GHSA-p3m5-59mp-jv5r e GHSA-mrhx-c7xc-m3w5). Nada muda no uso do app.
