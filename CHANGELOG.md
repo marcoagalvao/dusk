@@ -36,6 +36,9 @@ Revisão de usabilidade: as regras ficaram previsíveis, as palavras ficaram igu
 - Vocabulário único: Lembrete no lugar de Revisão e Revisar novamente, Resolver lembrete no lugar de Registrar acompanhamento, Próximo passo no lugar de Próxima ação, Quadro no lugar de Kanban, Recomendada no lugar de Inteligente, Bloqueada e Concluída no feminino, como as demais.
 - Painel reorganizado: primeiro o dia e o que espera por você; os gráficos e o relatório ficam no fim. Títulos mais diretos: Hoje, Outras que pedem atenção, Prioridade e prazo, Situação das abertas, Próximas duas semanas, Próximos lembretes.
 
+### Conferido em produção
+- Login, migrations e variáveis da Vercel funcionando, com a notificação do resumo diário entregue em um celular real.
+
 ### Segurança
 - Next.js atualizado de 16.3.8 para 16.4.3 e zod de 4.6.5 para 4.6.7, para corrigir falhas conhecidas nessas bibliotecas (GHSA-2464-fhr4-w9xw, GHSA-673q-mjm6-r5xr, GHSA-p3m5-59mp-jv5r e GHSA-mrhx-c7xc-m3w5). Nada muda no uso do app.
 

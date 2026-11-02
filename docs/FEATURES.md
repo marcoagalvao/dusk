@@ -98,11 +98,8 @@ Painel para entender o dia de relance. Blocos, métricas e regras em [`DASHBOARD
 
 | Item | Situação |
 | --- | --- |
-| Login real em produção | Testado contra servidor simulado local. O banco real foi testado só nas regras de RLS, até o usuário criar a conta |
-| Variáveis de ambiente na Vercel | A configurar pelo dono do projeto (ver `SETUP.md`) |
 | Bloquear novos cadastros no Supabase | Recomendado, a ser feito pelo dono do projeto (ver `SETUP.md`) |
 | Arraste por toque no quadro | Configurado, mas não testado em aparelho físico |
-| Entrega real dos avisos | Código e regras testados. A entrega depende das chaves na Vercel e de um aparelho real, e não foi conferida |
 | Formato do seletor de data | Nativo: segue o idioma do navegador |
 
 ## Backlog
