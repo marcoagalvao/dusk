@@ -1,0 +1,456 @@
+/*
+ * Cena da tela de login: um entardecer em que o sol se põe atrás do nome do app.
+ * Fica fora de @layer para acrescentar ao Input e ao Button sem disputar com os
+ * utilitários deles. Só usa cores dos tokens de globals.css.
+ *
+ * O estado final de tudo é o estilo base: as entradas só têm `from`, então sem
+ * animação (movimento reduzido) a cena aparece pronta.
+ */
+.login {
+  --horizon: clamp(232px, 40svh, 340px);
+  --wordmark: min(35vw, calc(var(--horizon) * 0.62));
+  --gutter: 16px;
+  --rose: var(--color-project-rose);
+  --peach: var(--color-project-peach);
+  --lavender: var(--color-primary);
+  --periwinkle: var(--color-project-periwinkle);
+
+  position: relative;
+  isolation: isolate;
+  min-height: 100dvh;
+  overflow: clip;
+  background-color: var(--color-canvas);
+}
+
+@media (min-width: 1024px) {
+  .login {
+    --horizon: 62svh;
+    --wordmark: min(19vw, calc(var(--horizon) * 0.56));
+    --gutter: clamp(40px, 6vw, 112px);
+    display: grid;
+    align-items: center;
+    justify-items: end;
+    min-height: max(100dvh, 600px);
+    padding-block: 32px;
+    padding-inline: var(--gutter);
+  }
+}
+
+.login-scene {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+/* Céu ------------------------------------------------------------------- */
+
+.login-sky {
+  position: absolute;
+  inset: 0 0 auto;
+  height: var(--horizon);
+  overflow: hidden;
+  background-color: var(--color-canvas);
+  animation: login-fade 1400ms var(--ease-dusk) both;
+}
+
+/* A faixa é mais alta que o céu e desliza devagar: as cores mudam sem repintar. */
+.login-sky-bands {
+  position: absolute;
+  inset: 0 0 auto;
+  height: 135%;
+  background-image: linear-gradient(
+    to bottom,
+    var(--color-canvas) 0%,
+    color-mix(in oklab, var(--color-canvas) 62%, var(--lavender)) 18%,
+    color-mix(in oklab, var(--color-canvas) 22%, var(--lavender)) 34%,
+    var(--lavender) 46%,
+    color-mix(in oklab, var(--lavender) 45%, var(--rose)) 56%,
+    var(--rose) 66%,
+    var(--peach) 76%,
+    var(--peach) 100%
+  );
+  animation: login-sky-drift 38s ease-in-out infinite alternate;
+  will-change: transform;
+}
+
+/* Manchas de luz que quebram a uniformidade do degradê. */
+.login-sky-glow {
+  position: absolute;
+  inset: -20% -10%;
+  background-image:
+    radial-gradient(44% 56% at 82% 64%, color-mix(in oklab, var(--periwinkle) 70%, transparent), transparent 72%),
+    radial-gradient(38% 50% at 8% 74%, color-mix(in oklab, var(--rose) 72%, transparent), transparent 74%);
+  animation: login-glow-drift 26s ease-in-out infinite alternate;
+  will-change: transform;
+}
+
+/* Primeiras estrelas, só na parte escura do céu. */
+.login-stars {
+  position: absolute;
+  inset: 0 0 auto;
+  height: 42%;
+  mask-image: linear-gradient(to bottom, black 55%, transparent);
+  background-repeat: no-repeat;
+  background-image:
+    radial-gradient(1.5px 1.5px at 7% 22%, var(--color-ink), transparent),
+    radial-gradient(1px 1px at 18% 58%, var(--color-ink), transparent),
+    radial-gradient(1.5px 1.5px at 31% 14%, var(--color-ink), transparent),
+    radial-gradient(1px 1px at 46% 40%, var(--color-ink), transparent),
+    radial-gradient(1.5px 1.5px at 62% 18%, var(--color-ink), transparent),
+    radial-gradient(1px 1px at 74% 52%, var(--color-ink), transparent),
+    radial-gradient(1.5px 1.5px at 91% 30%, var(--color-ink), transparent);
+  animation: login-twinkle 5s ease-in-out infinite alternate;
+}
+
+.login-stars-late {
+  background-image:
+    radial-gradient(1px 1px at 12% 38%, var(--color-ink), transparent),
+    radial-gradient(1.5px 1.5px at 25% 70%, var(--color-ink), transparent),
+    radial-gradient(1px 1px at 39% 26%, var(--color-ink), transparent),
+    radial-gradient(1.5px 1.5px at 55% 62%, var(--color-ink), transparent),
+    radial-gradient(1px 1px at 68% 34%, var(--color-ink), transparent),
+    radial-gradient(1px 1px at 84% 12%, var(--color-ink), transparent),
+    radial-gradient(1.5px 1.5px at 96% 56%, var(--color-ink), transparent);
+  animation-duration: 7s;
+  animation-delay: -3s;
+}
+
+/* Sol: o invólucro responde ao envio e o disco cuida da entrada. --------- */
+
+.login-sun {
+  --sun-size: clamp(240px, 78vw, 400px);
+  position: absolute;
+  left: 58%;
+  bottom: calc(var(--sun-size) * -0.42);
+  width: var(--sun-size);
+  aspect-ratio: 1;
+  margin-left: calc(var(--sun-size) / -2);
+  transition: transform 1600ms var(--ease-dusk);
+}
+
+@media (min-width: 1024px) {
+  .login-sun {
+    --sun-size: clamp(380px, 40vw, 780px);
+    left: 37%;
+  }
+}
+
+.login[data-state="sending"] .login-sun {
+  transform: translateY(26%);
+}
+
+.login-sun-disc {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background-image: linear-gradient(
+    to bottom,
+    var(--color-ink) 8%,
+    color-mix(in oklab, var(--color-ink) 45%, var(--peach)) 42%,
+    var(--peach) 70%
+  );
+  animation: login-sun-set 2600ms var(--ease-dusk) both;
+}
+
+.login-sun-halo {
+  position: absolute;
+  inset: -34%;
+  border-radius: 50%;
+  background-image: radial-gradient(closest-side, color-mix(in oklab, var(--color-ink) 62%, transparent) 52%, transparent);
+  animation:
+    login-fade 2200ms var(--ease-dusk) both,
+    login-halo 9s ease-in-out 2200ms infinite alternate;
+}
+
+/* Horizonte -------------------------------------------------------------- */
+
+.login-horizon {
+  position: absolute;
+  inset: var(--horizon) 0 auto;
+  height: 2px;
+  overflow: hidden;
+  background-image: linear-gradient(to right, var(--rose), var(--peach) 34%, var(--color-ink) 50%, var(--peach) 66%, var(--periwinkle));
+  transform-origin: 37% 50%;
+  animation: login-horizon-draw 1500ms var(--ease-dusk) both;
+}
+
+/* Enquanto envia, uma luz corre no horizonte. */
+.login-horizon::after {
+  content: "";
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 30%;
+  opacity: 0;
+  background-image: linear-gradient(to right, transparent, var(--color-ink), transparent);
+}
+
+.login[data-state="sending"] .login-horizon::after {
+  opacity: 1;
+  animation: login-horizon-run 1300ms ease-in-out infinite;
+}
+
+/* Água ------------------------------------------------------------------- */
+
+.login-water {
+  position: absolute;
+  inset: var(--horizon) 0 0;
+  overflow: hidden;
+  background-image: linear-gradient(
+    to bottom,
+    color-mix(in oklab, var(--color-canvas) 70%, var(--rose)) 0,
+    color-mix(in oklab, var(--color-canvas) 90%, var(--lavender)) 150px,
+    var(--color-canvas) 340px
+  );
+  animation: login-fade 1400ms var(--ease-dusk) both;
+}
+
+.login-reflection {
+  position: absolute;
+  top: 0;
+  left: 58%;
+  width: clamp(180px, 62vw, 340px);
+  height: 170px;
+  margin-left: calc(clamp(180px, 62vw, 340px) / -2);
+  background-image: repeating-linear-gradient(
+    to bottom,
+    var(--peach) 0 2px,
+    transparent 2px 11px
+  );
+  mask-image: radial-gradient(50% 100% at 50% 0, black 12%, transparent 100%);
+  opacity: 0.42;
+  animation: login-shimmer 6s ease-in-out infinite alternate;
+}
+
+.login-reflection-offset {
+  top: 7px;
+  opacity: 0.28;
+  animation-duration: 8s;
+  animation-direction: alternate-reverse;
+}
+
+@media (min-width: 1024px) {
+  .login-reflection {
+    left: 37%;
+    width: clamp(280px, 28vw, 560px);
+    height: min(38svh, 420px);
+    margin-left: calc(clamp(280px, 28vw, 560px) / -2);
+  }
+}
+
+/* Grão fixo: evita faixas visíveis nos degradês escuros. */
+.login-grain {
+  position: absolute;
+  inset: 0;
+  opacity: 0.045;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+/* Nome do app, em silhueta sobre o horizonte ----------------------------- */
+
+.login-wordmark {
+  position: absolute;
+  top: calc(var(--horizon) - var(--wordmark) * 0.78);
+  left: var(--gutter);
+  display: flex;
+  height: calc(var(--wordmark) * 0.78);
+  overflow: hidden;
+  padding-right: 0.04em;
+  font-size: var(--wordmark);
+  font-weight: 600;
+  line-height: 0.78;
+  letter-spacing: -0.055em;
+  color: var(--color-canvas);
+  user-select: none;
+}
+
+.login-wordmark span {
+  display: block;
+  animation: login-letter-rise 1300ms var(--ease-dusk) both;
+  animation-delay: calc(500ms + var(--letter) * 90ms);
+}
+
+.login-statement {
+  display: none;
+}
+
+@media (min-width: 1024px) {
+  .login-statement {
+    position: absolute;
+    top: calc(var(--horizon) + 28px);
+    left: var(--gutter);
+    display: block;
+    max-width: 24ch;
+    font-size: var(--text-section);
+    line-height: var(--text-section--line-height);
+    font-weight: 500;
+    letter-spacing: -0.01em;
+    text-wrap: balance;
+    color: var(--color-ink);
+    animation: login-rise 900ms var(--ease-dusk) 1300ms both;
+  }
+}
+
+/* Painel do formulário --------------------------------------------------- */
+
+.login-panel {
+  position: relative;
+  width: 100%;
+  max-width: 440px;
+  padding: calc(var(--horizon) + 24px) var(--gutter) 40px;
+  animation: login-rise 800ms var(--ease-dusk) 700ms both;
+}
+
+@media (min-width: 1024px) {
+  .login-panel {
+    width: clamp(360px, 30vw, 420px);
+    max-width: none;
+    padding: 32px;
+    border-radius: var(--radius-modal);
+    background-color: color-mix(in srgb, var(--color-canvas) 80%, transparent);
+    backdrop-filter: blur(28px) saturate(140%);
+    box-shadow:
+      inset 0 0 0 1px color-mix(in srgb, var(--color-ink) 12%, transparent),
+      0 32px 64px -28px color-mix(in srgb, var(--color-canvas) 86%, var(--lavender));
+  }
+
+  /* Filete com as cores do céu, no topo do painel. */
+  .login-panel::before {
+    content: "";
+    position: absolute;
+    inset: 0 24px auto;
+    height: 1px;
+    background-image: linear-gradient(to right, transparent, var(--lavender), var(--rose), var(--peach), transparent);
+  }
+}
+
+@media (min-width: 1024px) and (prefers-reduced-transparency: reduce) {
+  .login-panel {
+    background-color: var(--color-canvas);
+    backdrop-filter: none;
+  }
+}
+
+.login[data-state="error"] .login-panel {
+  animation: login-shake 420ms var(--ease-dusk);
+}
+
+.login-input {
+  height: 46px;
+  background-color: color-mix(in srgb, var(--color-surface) 82%, transparent);
+}
+
+.login-error {
+  animation: login-rise 220ms var(--ease-dusk);
+}
+
+/* O degradê é uma camada mais larga que desliza: só transform. */
+.login-submit {
+  position: relative;
+  isolation: isolate;
+  height: 48px;
+  overflow: hidden;
+  background-color: var(--lavender);
+}
+
+.login-submit::before {
+  content: "";
+  position: absolute;
+  inset: 0 auto 0 0;
+  z-index: -1;
+  width: 240%;
+  background-image: linear-gradient(
+    100deg,
+    var(--lavender),
+    var(--rose) 28%,
+    var(--peach) 50%,
+    var(--rose) 72%,
+    var(--lavender)
+  );
+  transition: transform 700ms var(--ease-dusk);
+}
+
+.login-submit:hover::before {
+  transform: translateX(-30%);
+}
+
+.login-submit:disabled {
+  opacity: 1;
+}
+
+.login[data-state="sending"] .login-submit::before {
+  animation: login-submit-run 1300ms linear infinite;
+}
+
+/* Movimento -------------------------------------------------------------- */
+
+@keyframes login-fade {
+  from { opacity: 0; }
+}
+
+@keyframes login-rise {
+  from { opacity: 0; transform: translateY(14px); }
+}
+
+@keyframes login-sun-set {
+  from { transform: translateY(-34%); }
+}
+
+@keyframes login-letter-rise {
+  from { transform: translateY(102%); }
+}
+
+@keyframes login-horizon-draw {
+  from { transform: scaleX(0); }
+}
+
+@keyframes login-horizon-run {
+  from { transform: translateX(-100%); }
+  to { transform: translateX(340%); }
+}
+
+@keyframes login-sky-drift {
+  to { transform: translateY(-9%); }
+}
+
+@keyframes login-glow-drift {
+  to { transform: translate3d(-5%, 4%, 0); }
+}
+
+@keyframes login-twinkle {
+  from { opacity: 0.25; }
+  to { opacity: 0.95; }
+}
+
+@keyframes login-halo {
+  to { transform: scale(1.07); }
+}
+
+@keyframes login-shimmer {
+  to { transform: translateX(14px) scaleX(0.92); }
+}
+
+@keyframes login-shake {
+  20% { transform: translateX(-7px); }
+  45% { transform: translateX(5px); }
+  70% { transform: translateX(-3px); }
+}
+
+@keyframes login-submit-run {
+  to { transform: translateX(-58.33%); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .login *,
+  .login *::before,
+  .login *::after,
+  .login-panel {
+    animation: none !important;
+  }
+
+  /* O envio continua visível, sem movimento: o horizonte acende por inteiro. */
+  .login[data-state="sending"] .login-horizon::after {
+    width: 100%;
+  }
+}

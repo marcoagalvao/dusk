@@ -1,7 +1,7 @@
 // Recebe o resumo diário enviado pelo servidor e abre o app ao tocar na notificação.
 self.addEventListener("push", (event) => {
   const { title = "Dusk", body = "" } = event.data ? event.data.json() : {};
-  event.waitUntil(self.registration.showNotification(title, { body, icon: "/icon.svg", tag: "dusk-resumo-diario" }));
+  event.waitUntil(self.registration.showNotification(title, { body, icon: "/icon-192.png", tag: "dusk-resumo-diario" }));
 });
 
 self.addEventListener("notificationclick", (event) => {
