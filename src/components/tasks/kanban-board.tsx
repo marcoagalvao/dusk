@@ -18,13 +18,20 @@ import {
   type DragStartEvent,
   type KeyboardCoordinateGetter,
 } from "@dnd-kit/core";
-import { ArrowRight, GripVertical, Hourglass } from "lucide-react";
+import { ArrowRight, ArrowRightLeft, GripVertical, Hourglass } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useMemo, useRef, useState, type ReactNode, type SyntheticEvent } from "react";
 
 import { setTaskStatus } from "@/actions/task-actions";
 import { CompactPriority, ProjectLabel } from "@/components/ui/badges";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuTrigger,
+} from "@/components/ui/menu";
 import { StatusGlyph } from "@/components/ui/status-glyph";
 import { STATUS_COLOR } from "@/components/ui/tokens";
 import type { Project } from "@/domain/project";
@@ -37,7 +44,7 @@ import { ProgressUpdateDialog } from "./progress-update-dialog";
 import { TaskDateLabel } from "./task-date";
 import { CompactPriorityControl } from "./task-detail-controls";
 
-/** A coluna Concluído mostra só o que terminou recentemente, para não crescer sem fim. */
+/** A coluna Concluída mostra só o que terminou recentemente, para não crescer sem fim. */
 export const KANBAN_COMPLETED_DAYS = 7;
 
 interface KanbanBoardProps {
@@ -105,11 +112,15 @@ export function KanbanBoard({ tasks, projectsById, today }: KanbanBoardProps) {
     setTimeout(() => (justDraggedRef.current = false), 0);
 
     const task = taskById.get(String(active.id));
-    if (!task || !over || !isStatus(over.id) || over.id === task.status) return;
+    if (task && over && isStatus(over.id)) moveTask(task, over.id);
+  };
 
+  /** Mesma regra para o arraste e para o menu "Mover para" do celular. */
+  const moveTask = (task: Task, status: TaskStatus) => {
+    if (status === task.status) return;
     // Em Aguardando sem `waitingFor`, um único toast já confirma e convida a registrar quem (PRD §21).
-    const promptWaiting = over.id === "waiting" && !task.waitingFor;
-    setTaskStatus(task.id, over.id, { silent: promptWaiting });
+    const promptWaiting = status === "waiting" && !task.waitingFor;
+    setTaskStatus(task.id, status, { silent: promptWaiting });
     if (promptWaiting) {
       toast.show("Movida para Aguardando.", {
         duration: 6000,
@@ -170,6 +181,7 @@ export function KanbanBoard({ tasks, projectsById, today }: KanbanBoardProps) {
                   project={task.projectId ? projectsById.get(task.projectId) : undefined}
                   today={today}
                   justDraggedRef={justDraggedRef}
+                  onMove={moveTask}
                 />
               ))}
             </KanbanColumn>
@@ -248,9 +260,11 @@ interface CardBodyProps {
   className?: string;
   /** No cartão real a prioridade é editável; na sombra do arraste, só leitura. */
   priority?: ReactNode;
+  /** Ações do cartão real, como "Mover para". */
+  footer?: ReactNode;
 }
 
-function CardBody({ task, project, today, className, priority }: CardBodyProps) {
+function CardBody({ task, project, today, className, priority, footer }: CardBodyProps) {
   const completed = task.status === "completed";
   return (
     <div className={cn("flex flex-col gap-1.5 rounded-[10px] border p-3 text-left", className)}>
@@ -272,21 +286,56 @@ function CardBody({ task, project, today, className, priority }: CardBodyProps) 
       {task.nextAction && !completed && (
         <span className="flex min-w-0 items-center gap-1.5 text-meta text-ink-muted">
           <ArrowRight aria-hidden="true" className="size-3 shrink-0 text-primary" />
+          <span className="sr-only">Próximo passo:</span>
           <span className="truncate">{task.nextAction}</span>
         </span>
       )}
+      {footer}
     </div>
   );
 }
 
 const stopPropagation = (event: SyntheticEvent) => event.stopPropagation();
 
+/** No celular, arrastar entre colunas que não cabem na tela é difícil: o menu faz o mesmo em dois toques. */
+function MoveMenu({ task, onMove }: { task: Task; onMove: (task: Task, status: TaskStatus) => void }) {
+  return (
+    <span
+      className="-mx-1 mt-0.5 self-start lg:hidden"
+      onClick={stopPropagation}
+      onMouseDown={stopPropagation}
+      onTouchStart={stopPropagation}
+      onKeyDown={stopPropagation}
+    >
+      <DropdownMenu>
+        <DropdownMenuTrigger
+          aria-label={`Mover "${task.title}" para outra coluna`}
+          className="focus-ring inline-flex h-8 items-center gap-1.5 rounded-[6px] px-1 text-meta text-ink-muted transition-colors duration-120 hover:bg-raised"
+        >
+          <ArrowRightLeft aria-hidden="true" className="size-3.5" />
+          Mover para
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="start">
+          <DropdownMenuLabel>Mover para</DropdownMenuLabel>
+          {TASK_STATUSES.filter((status) => status !== task.status).map((status) => (
+            <DropdownMenuItem key={status} onSelect={() => onMove(task, status)}>
+              <StatusGlyph status={status} size={14} />
+              {STATUS_LABELS[status]}
+            </DropdownMenuItem>
+          ))}
+        </DropdownMenuContent>
+      </DropdownMenu>
+    </span>
+  );
+}
+
 function KanbanCard({
   task,
   project,
   today,
   justDraggedRef,
-}: CardBodyProps & { justDraggedRef: React.RefObject<boolean> }) {
+  onMove,
+}: CardBodyProps & { justDraggedRef: React.RefObject<boolean>; onMove: (task: Task, status: TaskStatus) => void }) {
   const router = useRouter();
   const { attributes, listeners, setNodeRef, isDragging } = useDraggable({ id: task.id, data: { status: task.status } });
 
@@ -313,6 +362,7 @@ function KanbanCard({
             <CompactPriorityControl task={task} />
           </span>
         }
+        footer={<MoveMenu task={task} onMove={onMove} />}
       />
       <GripVertical aria-hidden="true" className="absolute top-3 right-2 size-3.5 text-ink-subtle opacity-0 transition-opacity duration-120 group-hover:opacity-100" />
       <Link

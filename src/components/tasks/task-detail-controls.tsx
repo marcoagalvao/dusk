@@ -1,6 +1,6 @@
 "use client";
 
-import { CalendarClock, CalendarDays, ChevronDown, FolderOpen } from "lucide-react";
+import { CalendarClock, CalendarDays, ChevronDown, FolderOpen, Repeat } from "lucide-react";
 import { useId, useState, type ReactNode } from "react";
 
 import { patchTask, setTaskStatus } from "@/actions/task-actions";
@@ -22,11 +22,15 @@ import { ProjectDot } from "@/components/ui/badges";
 import { PRIORITY_COLOR } from "@/components/ui/tokens";
 import {
   PRIORITY_LABELS,
+  RECURRENCE_LABELS,
+  STATUS_DESCRIPTIONS,
   STATUS_LABELS,
   TASK_PRIORITIES,
+  TASK_RECURRENCES,
   TASK_STATUSES,
   type Task,
   type TaskPriority,
+  type TaskRecurrence,
   type TaskStatus,
 } from "@/domain/task";
 import { formatRelativeDay } from "@/lib/dates";
@@ -39,7 +43,7 @@ const CHIP_TRIGGER =
 interface StatusControlProps {
   task: Task;
   disabled?: boolean;
-  /** Mudar para Aguardando abre o andamento para incentivar `waitingFor` e revisão (PRD §21). */
+  /** Mudar para Aguardando abre o andamento para incentivar `waitingFor` e lembrete (PRD §21). */
   onRequestWaiting: () => void;
 }
 
@@ -50,7 +54,7 @@ export function StatusControl({ task, disabled, onRequestWaiting }: StatusContro
         <StatusBadge status={task.status} />
         {!disabled && <ChevronDown aria-hidden="true" className="size-3 text-ink-subtle" />}
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="start">
+      <DropdownMenuContent align="start" className="max-w-72">
         <DropdownMenuLabel>Status</DropdownMenuLabel>
         <DropdownMenuRadioGroup
           value={task.status}
@@ -63,7 +67,10 @@ export function StatusControl({ task, disabled, onRequestWaiting }: StatusContro
           {TASK_STATUSES.map((status) => (
             <DropdownMenuRadioItem key={status} value={status}>
               <StatusGlyph status={status} size={14} />
-              {STATUS_LABELS[status]}
+              <span className="flex flex-col">
+                {STATUS_LABELS[status]}
+                <span className="text-meta font-normal text-ink-subtle">{STATUS_DESCRIPTIONS[status]}</span>
+              </span>
             </DropdownMenuRadioItem>
           ))}
         </DropdownMenuRadioGroup>
@@ -133,18 +140,18 @@ interface DateControlProps {
 
 const DATE_CONTROL = {
   dueDate: { label: "Prazo", empty: "Definir prazo", icon: CalendarDays },
-  reviewDate: { label: "Revisar", empty: "Revisar em…", icon: CalendarClock },
+  reviewDate: { label: "Lembrete", empty: "Definir lembrete", icon: CalendarClock },
 } as const;
 
-/** Chip de data editável no lugar (prazo e revisão são independentes, PRD §14). */
+/** Chip de data editável no lugar (prazo e lembrete são independentes, PRD §14). */
 export function DateControl({ task, field, today, disabled }: DateControlProps) {
   const id = useId();
   const [open, setOpen] = useState(false);
   const value = task[field];
   const config = DATE_CONTROL[field];
   const isOpenTask = task.status !== "completed";
-  // Prazo pede atenção quando vence (só em tarefa aberta); revisão, quando chega
-  // o dia, mesmo em tarefa concluída (acompanhamento pós-entrega).
+  // Prazo pede atenção quando vence (só em tarefa aberta); lembrete, quando chega
+  // o dia, mesmo em tarefa concluída (verificação depois da entrega).
   const needsAttention =
     Boolean(value) && (field === "dueDate" ? isOpenTask && value! < today : value! <= today);
   const Icon = config.icon;
@@ -169,7 +176,7 @@ export function DateControl({ task, field, today, disabled }: DateControlProps) 
       </PopoverTrigger>
       <PopoverContent className="w-72">
         <label htmlFor={id} className="mb-2 block text-label font-medium text-ink-muted">
-          {field === "dueDate" ? "Prazo" : "Revisar novamente"}
+          {field === "dueDate" ? "Prazo: quando precisa estar pronta" : "Lembrete: quando voltar a olhar"}
         </label>
         <DateField
           id={id}
@@ -181,6 +188,50 @@ export function DateControl({ task, field, today, disabled }: DateControlProps) 
         />
       </PopoverContent>
     </Popover>
+  );
+}
+
+const RECURRENCE_NONE = "none";
+
+/** Repetir conta a partir do prazo: sem prazo, a primeira data é hoje. */
+export function RecurrenceControl({ task, today, disabled }: { task: Task; today: string; disabled?: boolean }) {
+  const rule = task.recurrence;
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger
+        disabled={disabled}
+        className={cn(
+          CHIP_TRIGGER,
+          "h-6 px-2.5 text-meta font-medium",
+          rule ? "bg-raised text-ink-muted" : "border border-dashed border-line text-ink-subtle",
+        )}
+        aria-label={rule ? `Repetir: ${RECURRENCE_LABELS[rule]}. Alterar` : "Definir repetição"}
+      >
+        <Repeat aria-hidden="true" className="size-3" />
+        {rule ? RECURRENCE_LABELS[rule] : "Repetir"}
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="start">
+        <DropdownMenuLabel>Ao concluir, criar a próxima</DropdownMenuLabel>
+        <DropdownMenuRadioGroup
+          value={rule ?? RECURRENCE_NONE}
+          onValueChange={(value) => {
+            if (value === RECURRENCE_NONE) {
+              patchTask(task.id, { recurrence: null }, "Não repete mais");
+              return;
+            }
+            const recurrence = value as TaskRecurrence;
+            patchTask(task.id, { recurrence, ...(task.dueDate ? {} : { dueDate: today }) }, task.dueDate ? `Repete: ${RECURRENCE_LABELS[recurrence].toLowerCase()}` : `Repete: ${RECURRENCE_LABELS[recurrence].toLowerCase()}. Primeiro prazo: hoje.`);
+          }}
+        >
+          <DropdownMenuRadioItem value={RECURRENCE_NONE}>Não repete</DropdownMenuRadioItem>
+          {TASK_RECURRENCES.map((value) => (
+            <DropdownMenuRadioItem key={value} value={value}>
+              {RECURRENCE_LABELS[value]}
+            </DropdownMenuRadioItem>
+          ))}
+        </DropdownMenuRadioGroup>
+      </DropdownMenuContent>
+    </DropdownMenu>
   );
 }
 

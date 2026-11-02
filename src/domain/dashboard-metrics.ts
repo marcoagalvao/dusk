@@ -12,7 +12,9 @@ import {
   isOverdue,
   isReviewReached,
   isTodayRelevant,
+  waitingSince,
 } from "./task-queries";
+import { SOON_DAYS } from "./task-constants";
 
 /*
  * Números da visão geral. Tudo puro e calculado a partir das tarefas em memória,
@@ -26,7 +28,7 @@ const dayOf = (iso: string): DateKey => toDateKey(new Date(iso));
 // ---------------------------------------------------------------------------
 
 export interface TodayPulse {
-  /** Abertas que pedem algo hoje: foco, prazo até hoje ou revisão que chegou. */
+  /** Abertas que pedem algo hoje: foco, prazo até hoje ou lembrete que chegou. */
   pending: number;
   doneToday: number;
   /** Quanto do dia já foi feito (0–100). */
@@ -60,7 +62,7 @@ export function todayPulse(tasks: readonly Task[], today: DateKey): TodayPulse {
 
 const AGENDA_FOCUS_RANK = 6;
 
-/** Foco de hoje + "Precisa da sua atenção" numa lista só, das mais críticas às concluídas no foco. */
+/** Foco de hoje + o que pede atenção numa lista só, das mais críticas às concluídas no foco. */
 export function getTodayAgenda(tasks: readonly Task[], today: DateKey): Task[] {
   const ranked = tasks.flatMap((task) => {
     const rank = attentionRank(task, today);
@@ -85,8 +87,6 @@ export function getTodayAgenda(tasks: readonly Task[], today: DateKey): Task[] {
 
 export const DUE_BUCKETS = ["overdue", "today", "soon", "later", "none"] as const;
 export type DueBucket = (typeof DUE_BUCKETS)[number];
-
-export const SOON_DAYS = 7;
 
 export type PriorityMatrix = Record<TaskPriority, Record<DueBucket, number>>;
 
@@ -133,7 +133,7 @@ export function upcomingDays(tasks: readonly Task[], today: DateKey, count: numb
   for (const task of tasks) {
     if (isArchived(task)) continue;
     if (isOpen(task) && task.dueDate) byDate.get(task.dueDate)?.items.push({ task, kind: "due" });
-    // Prazo e revisão no mesmo dia: o prazo já traz a tarefa, não precisa aparecer duas vezes.
+    // Prazo e lembrete no mesmo dia: o prazo já traz a tarefa, não precisa aparecer duas vezes.
     const alreadyListed = isOpen(task) && task.dueDate === task.reviewDate;
     if (task.reviewDate && !alreadyListed) byDate.get(task.reviewDate)?.items.push({ task, kind: "review" });
   }
@@ -334,7 +334,7 @@ export function activityHeatmap(tasks: readonly Task[], today: DateKey, weeks: n
 export interface WaitingPerson {
   name: string;
   count: number;
-  /** Dias desde a atualização mais antiga entre as tarefas aguardando essa pessoa. */
+  /** Há quantos dias a tarefa mais antiga está aguardando essa pessoa. */
   oldestDays: number;
   taskIds: string[];
 }
@@ -345,7 +345,7 @@ export function waitingByPerson(tasks: readonly Task[], today: DateKey): Waiting
   for (const task of tasks) {
     if (!isOpen(task) || task.status !== "waiting" || !task.waitingFor) continue;
     const key = normalizeForSearch(task.waitingFor);
-    const days = diffInDays(today, dayOf(task.updatedAt));
+    const days = diffInDays(today, dayOf(waitingSince(task)));
     const person = people.get(key);
     if (person) {
       person.count += 1;

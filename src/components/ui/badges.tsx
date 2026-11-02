@@ -5,7 +5,7 @@ import { PRIORITY_LABELS, STATUS_LABELS, type TaskPriority, type TaskStatus } fr
 import { cn } from "@/lib/utils/cn";
 
 import { StatusGlyph } from "./status-glyph";
-import { PRIORITY_COLOR, PROJECT_COLOR, STATUS_COLOR, tint } from "./tokens";
+import { PRIORITY_COLOR, projectColorValue, STATUS_COLOR, tint } from "./tokens";
 
 const PILL = "inline-flex h-6 shrink-0 items-center gap-1.5 rounded-full px-2.5 text-meta font-medium";
 
@@ -51,7 +51,7 @@ export function ProjectDot({ project, size = 8 }: { project: Pick<Project, "colo
     <span
       aria-hidden="true"
       className="inline-block shrink-0 rounded-full"
-      style={{ width: size, height: size, backgroundColor: PROJECT_COLOR[project.color] }}
+      style={{ width: size, height: size, backgroundColor: projectColorValue(project.color) }}
     />
   );
 }

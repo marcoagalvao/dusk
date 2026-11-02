@@ -1,4 +1,4 @@
-import { readFileSync } from "node:fs";
+import { readdirSync, readFileSync } from "node:fs";
 
 import { describe, expect, it } from "vitest";
 
@@ -67,20 +67,26 @@ describe("stateToRows / rowsToState", () => {
 });
 
 describe("schema do banco", () => {
-  /** Colunas de cada `create table` da migration, sem o dono da linha e sem as constraints. */
+  /** Colunas de cada tabela sincronizada somando as migrations, sem o dono da linha e sem as constraints. */
   function migrationColumns(): Record<string, string[]> {
-    const sql = readFileSync(new URL("../../../supabase/migrations/0001_initial_schema.sql", import.meta.url), "utf8");
-    const tables = [...sql.matchAll(/create table public\.(\w+) \(\n([\s\S]*?)\n\);/g)];
-    return Object.fromEntries(
-      tables.map(([, table, body]) => [
-        table,
-        body
-          .split("\n")
-          .map((line) => line.trim().split(/\s+/)[0])
-          .filter((column) => !["user_id", "primary", "foreign"].includes(column))
-          .sort(),
-      ]),
-    );
+    const folder = new URL("../../../supabase/migrations/", import.meta.url);
+    // O checkout no Windows pode trazer CRLF.
+    const sql = readdirSync(folder)
+      .sort()
+      .map((file) => readFileSync(new URL(file, folder), "utf8"))
+      .join("\n")
+      .replace(/\r\n/g, "\n");
+
+    const columns: Record<string, string[]> = {};
+    for (const [, table, body] of sql.matchAll(/create table public\.(\w+) \(\n([\s\S]*?)\n\);/g)) {
+      columns[table] = body
+        .split("\n")
+        .map((line) => line.trim().split(/\s+/)[0])
+        .filter((column) => !["user_id", "primary", "foreign"].includes(column));
+    }
+    for (const [, table, column] of sql.matchAll(/alter table public\.(\w+)\s+add column (\w+)/g)) columns[table].push(column);
+
+    return Object.fromEntries(TABLES.map((table) => [table, columns[table].sort()]));
   }
 
   it("as linhas geradas pelo app têm exatamente as colunas das tabelas", () => {

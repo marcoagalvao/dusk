@@ -7,8 +7,9 @@ import { useId, useRef, useState, type FormEvent } from "react";
 import { createTask } from "@/actions/task-actions";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogFooter, DialogHeader } from "@/components/ui/dialog";
-import { Field, Input, Select } from "@/components/ui/form-controls";
-import { PRIORITY_LABELS, TASK_PRIORITIES, type TaskPriority } from "@/domain/task";
+import { DateField } from "@/components/ui/date-field";
+import { Field, Select } from "@/components/ui/form-controls";
+import { PRIORITY_LABELS, RECURRENCE_LABELS, TASK_PRIORITIES, TASK_RECURRENCES, type TaskPriority, type TaskRecurrence } from "@/domain/task";
 import { useToday } from "@/hooks/use-clock";
 import { useActiveProjects } from "@/store/hooks";
 import { useUiStore, type QuickCreateDefaults } from "@/store/ui-store";
@@ -52,6 +53,7 @@ function QuickCreateForm({
   const dueId = useId();
   const priorityId = useId();
   const reviewId = useId();
+  const recurrenceId = useId();
   const pathname = usePathname();
   const today = useToday();
   const projects = useActiveProjects();
@@ -63,12 +65,40 @@ function QuickCreateForm({
   const [dueDate, setDueDate] = useState("");
   const [priority, setPriority] = useState<TaskPriority>("normal");
   const [reviewDate, setReviewDate] = useState("");
+  const [recurrence, setRecurrence] = useState<TaskRecurrence | "">("");
   // Quem cria a partir da vista Hoje espera ver a tarefa lá.
   const [inFocus, setInFocus] = useState(pathname === "/tasks/today");
   const canCreate = title.trim().length > 0;
   // O conteúdo continua montado durante a animação de saída; isso impede que
   // um Enter repetido nesse intervalo crie a tarefa duas vezes.
   const submittedRef = useRef(false);
+
+  const create = () =>
+    createTask({
+      title,
+      projectId: project || undefined,
+      priority,
+      // Repetir conta a partir do prazo: sem data escolhida, a primeira é hoje.
+      dueDate: dueDate || (recurrence ? today : undefined),
+      reviewDate: reviewDate || undefined,
+      focusDate: inFocus ? today : undefined,
+      recurrence: recurrence || undefined,
+    });
+
+  /** Mantém o projeto: quem anota várias em sequência costuma estar no mesmo assunto. */
+  const createAndAddAnother = () => {
+    if (!canCreate) {
+      titleRef.current?.focus();
+      return;
+    }
+    create();
+    setTitle("");
+    setDueDate("");
+    setPriority("normal");
+    setReviewDate("");
+    setRecurrence("");
+    titleRef.current?.focus();
+  };
 
   const handleSubmit = (event: FormEvent) => {
     event.preventDefault();
@@ -79,14 +109,7 @@ function QuickCreateForm({
     }
     submittedRef.current = true;
     titleRef.current?.blur();
-    const task = createTask({
-      title,
-      projectId: project || undefined,
-      priority,
-      dueDate: dueDate || undefined,
-      reviewDate: reviewDate || undefined,
-      focusDate: inFocus ? today : undefined,
-    });
+    const task = create();
     onDone();
     // Abre a tarefa recém-criada para completar o contexto; o "voltar" do
     // detalhe leva de volta à tela onde a criação começou.
@@ -130,13 +153,27 @@ function QuickCreateForm({
             ))}
           </Select>
         </Field>
-        <Field label="Prazo" htmlFor={dueId}>
-          <Input id={dueId} type="date" value={dueDate} onChange={(event) => setDueDate(event.target.value)} />
+      </div>
+
+      <div className="grid gap-3 sm:grid-cols-2">
+        <Field label="Prazo" htmlFor={dueId} hint="Quando precisa estar pronta.">
+          <DateField id={dueId} value={dueDate} onChange={setDueDate} today={today} />
         </Field>
-        <Field label="Revisar em" htmlFor={reviewId}>
-          <Input id={reviewId} type="date" value={reviewDate} onChange={(event) => setReviewDate(event.target.value)} />
+        <Field label="Lembrete" htmlFor={reviewId} hint="Quando voltar a olhar.">
+          <DateField id={reviewId} value={reviewDate} onChange={setReviewDate} today={today} shortcuts="review" />
         </Field>
       </div>
+
+      <Field label="Repetir" htmlFor={recurrenceId} hint={recurrence ? "Ao concluir, a próxima é criada sozinha." : undefined}>
+        <Select id={recurrenceId} value={recurrence} onChange={(event) => setRecurrence(event.target.value as TaskRecurrence | "")}>
+          <option value="">Não repete</option>
+          {TASK_RECURRENCES.map((value) => (
+            <option key={value} value={value}>
+              {RECURRENCE_LABELS[value]}
+            </option>
+          ))}
+        </Select>
+      </Field>
 
       <label className="flex min-h-6 cursor-pointer items-center gap-2 text-compact text-ink-muted">
         <input
@@ -145,12 +182,20 @@ function QuickCreateForm({
           onChange={(event) => setInFocus(event.target.checked)}
           className="size-4 accent-primary"
         />
-        Colocar no foco de hoje
+        <span>
+          Colocar no foco de hoje
+          <span className="block text-meta text-ink-subtle">O que você escolhe fazer hoje. Vale só para hoje.</span>
+        </span>
       </label>
 
       <DialogFooter>
-        <Button variant="ghost" onClick={onDone}>
-          Cancelar
+        <div className="hidden sm:block">
+          <Button variant="ghost" onClick={onDone}>
+            Cancelar
+          </Button>
+        </div>
+        <Button variant="secondary" onClick={createAndAddAnother} disabled={!canCreate}>
+          Criar e adicionar outra
         </Button>
         <Button type="submit" variant="primary" disabled={!canCreate}>
           Criar

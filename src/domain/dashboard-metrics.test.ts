@@ -325,8 +325,8 @@ describe("waitingByPerson", () => {
   it("agrupa ignorando maiúsculas e acentos, com quem deve mais primeiro", () => {
     const people = waitingByPerson(
       [
-        task("a", { status: "waiting", waitingFor: "José", updatedAt: at("2026-10-20") }),
-        task("b", { status: "waiting", waitingFor: "jose", updatedAt: at("2026-10-28") }),
+        task("a", { status: "waiting", waitingFor: "José", createdAt: at("2026-10-20") }),
+        task("b", { status: "waiting", waitingFor: "jose", createdAt: at("2026-10-28") }),
         task("c", { status: "waiting", waitingFor: "Ana" }),
         task("d", { status: "todo", waitingFor: "Ana" }),
         task("e", { status: "waiting" }),

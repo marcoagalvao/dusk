@@ -7,7 +7,16 @@ import { Button } from "@/components/ui/button";
 import { DateField } from "@/components/ui/date-field";
 import { Dialog, DialogContent, DialogFooter, DialogHeader } from "@/components/ui/dialog";
 import { Field, Input, Select, Textarea } from "@/components/ui/form-controls";
-import { PRIORITY_LABELS, TASK_PRIORITIES, type Task, type TaskPriority } from "@/domain/task";
+import {
+  PRIORITY_LABELS,
+  RECURRENCE_LABELS,
+  STATUSES_WITH_WAITING,
+  TASK_PRIORITIES,
+  TASK_RECURRENCES,
+  type Task,
+  type TaskPriority,
+  type TaskRecurrence,
+} from "@/domain/task";
 import { useToday } from "@/hooks/use-clock";
 import { useActiveProjects, useProject } from "@/store/hooks";
 
@@ -43,6 +52,7 @@ function TaskEditForm({ task, onDone }: { task: Task; onDone: () => void }) {
     priority: task.priority,
     dueDate: task.dueDate ?? "",
     reviewDate: task.reviewDate ?? "",
+    recurrence: (task.recurrence ?? "") as TaskRecurrence | "",
     nextAction: task.nextAction ?? "",
     waitingFor: task.waitingFor ?? "",
     lastDone: task.lastDone ?? "",
@@ -57,6 +67,8 @@ function TaskEditForm({ task, onDone }: { task: Task; onDone: () => void }) {
     setValues((current) => ({ ...current, [key]: value }));
 
   const canSave = values.title.trim().length > 0;
+  const showWaiting = STATUSES_WITH_WAITING.includes(task.status);
+  const completed = task.status === "completed";
 
   const handleSubmit = (event: FormEvent) => {
     event.preventDefault();
@@ -66,10 +78,12 @@ function TaskEditForm({ task, onDone }: { task: Task; onDone: () => void }) {
       title: values.title,
       projectId: values.projectId || null,
       priority: values.priority,
-      dueDate: values.dueDate || null,
+      // Repetir conta a partir do prazo: sem data escolhida, a primeira é hoje.
+      dueDate: values.dueDate || (values.recurrence ? today : null),
       reviewDate: values.reviewDate || null,
+      recurrence: values.recurrence || null,
       nextAction: values.nextAction,
-      waitingFor: values.waitingFor,
+      ...(showWaiting ? { waitingFor: values.waitingFor } : {}),
       lastDone: values.lastDone,
       note: values.note,
     });
@@ -117,10 +131,10 @@ function TaskEditForm({ task, onDone }: { task: Task; onDone: () => void }) {
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2">
-        <Field label="Prazo" htmlFor={`${id}-due`} hint="Quando precisa estar concluída.">
+        <Field label="Prazo" htmlFor={`${id}-due`} hint="Quando precisa estar pronta.">
           <DateField id={`${id}-due`} value={values.dueDate} onChange={(value) => set("dueDate", value)} today={today} />
         </Field>
-        <Field label="Revisar novamente" htmlFor={`${id}-review`} hint="Quando voltar a olhar.">
+        <Field label="Lembrete" htmlFor={`${id}-review`} hint="Quando voltar a olhar.">
           <DateField
             id={`${id}-review`}
             value={values.reviewDate}
@@ -131,12 +145,31 @@ function TaskEditForm({ task, onDone }: { task: Task; onDone: () => void }) {
         </Field>
       </div>
 
-      <Field label="Próxima ação" htmlFor={`${id}-next`}>
+      {!completed && (
+        <Field label="Repetir" htmlFor={`${id}-recurrence`} hint={values.recurrence ? "Ao concluir, a próxima é criada sozinha." : undefined}>
+          <Select
+            id={`${id}-recurrence`}
+            value={values.recurrence}
+            onChange={(event) => set("recurrence", event.target.value as TaskRecurrence | "")}
+          >
+            <option value="">Não repete</option>
+            {TASK_RECURRENCES.map((value) => (
+              <option key={value} value={value}>
+                {RECURRENCE_LABELS[value]}
+              </option>
+            ))}
+          </Select>
+        </Field>
+      )}
+
+      <Field label="Próximo passo" htmlFor={`${id}-next`}>
         <Input id={`${id}-next`} value={values.nextAction} onChange={(event) => set("nextAction", event.target.value)} autoComplete="off" />
       </Field>
-      <Field label="Aguardando" htmlFor={`${id}-waiting`}>
-        <Input id={`${id}-waiting`} value={values.waitingFor} onChange={(event) => set("waitingFor", event.target.value)} autoComplete="off" />
-      </Field>
+      {showWaiting && (
+        <Field label={task.status === "blocked" ? "Bloqueada por" : "Aguardando"} htmlFor={`${id}-waiting`}>
+          <Input id={`${id}-waiting`} value={values.waitingFor} onChange={(event) => set("waitingFor", event.target.value)} autoComplete="off" />
+        </Field>
+      )}
       <Field label="Último avanço" htmlFor={`${id}-done`}>
         <Input id={`${id}-done`} value={values.lastDone} onChange={(event) => set("lastDone", event.target.value)} autoComplete="off" />
       </Field>

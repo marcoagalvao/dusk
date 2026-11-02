@@ -1,3 +1,4 @@
+import { disablePush } from "@/lib/push/client";
 import { getSupabase } from "@/lib/supabase/client";
 import { appPersistence } from "@/store/persistence";
 import { toast } from "@/store/ui-store";
@@ -18,6 +19,9 @@ export async function signOut(): Promise<void> {
     toast.error("Ainda há alterações sem enviar ao banco. Verifique a conexão antes de sair.");
     return;
   }
+
+  // Enquanto ainda há login: este aparelho não deve receber avisos de uma conta que saiu.
+  await disablePush().catch(() => undefined);
 
   // Só desconecta depois de sair de verdade: sem rede, o login continua e as edições precisam continuar valendo.
   const userId = appPersistence.connectedUserId();

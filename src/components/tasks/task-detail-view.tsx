@@ -50,7 +50,7 @@ import { useUiStore } from "@/store/ui-store";
 import { FollowUpDialog } from "./follow-up-dialog";
 import { ProgressUpdateDialog, type ProgressDialogIntent } from "./progress-update-dialog";
 import { SubtaskList } from "./subtask-list";
-import { DateControl, PriorityControl, ProjectControl, StatusControl } from "./task-detail-controls";
+import { DateControl, PriorityControl, ProjectControl, RecurrenceControl, StatusControl } from "./task-detail-controls";
 import { describeDate } from "./task-date";
 import { TaskEditDialog } from "./task-edit-dialog";
 import { TaskTimeline } from "./task-timeline";
@@ -131,6 +131,7 @@ function TaskDetail({
   const focused = isInFocus(task, today);
   const progressCount = task.updates.filter((update) => update.type === "progress").length;
   const showWaiting = STATUSES_WITH_WAITING.includes(task.status) && Boolean(task.waitingFor);
+  const reminderArrived = Boolean(task.reviewDate) && task.reviewDate! <= today;
   const openProgress = (intent: ProgressDialogIntent = {}) => {
     setProgressIntent(intent);
     setProgressOpen(true);
@@ -148,6 +149,12 @@ function TaskDetail({
           <span className="truncate">{back.label}</span>
         </Link>
         <div className="flex items-center gap-1">
+          {!archived && (
+            <Button size="sm" variant="ghost" onClick={() => setEditOpen(true)}>
+              <Pencil aria-hidden="true" className="size-4" />
+              Editar
+            </Button>
+          )}
           {!completed && !archived && (
             <IconButton
               label={focused ? "Remover do foco de hoje" : "Adicionar ao foco de hoje"}
@@ -162,12 +169,6 @@ function TaskDetail({
               <IconButton label="Mais ações" icon={<Ellipsis className="size-4" />} />
             </DropdownMenuTrigger>
             <DropdownMenuContent>
-              {!archived && (
-                <DropdownMenuItem onSelect={() => setEditOpen(true)}>
-                  <Pencil />
-                  Editar
-                </DropdownMenuItem>
-              )}
               {archived ? (
                 <DropdownMenuItem onSelect={() => unarchiveTask(task.id)}>
                   <ArchiveRestore />
@@ -216,6 +217,7 @@ function TaskDetail({
           <PriorityControl task={task} disabled={archived} />
           <DateControl task={task} field="dueDate" today={today} disabled={archived} />
           <DateControl task={task} field="reviewDate" today={today} disabled={archived} />
+          {!completed && <RecurrenceControl task={task} today={today} disabled={archived} />}
         </div>
       </header>
 
@@ -225,7 +227,7 @@ function TaskDetail({
             <>
               <Button variant={task.reviewDate ? "primary" : "secondary"} onClick={() => setFollowUpOpen(true)}>
                 <MessageSquareText aria-hidden="true" className="size-4" />
-                Registrar acompanhamento
+                {task.reviewDate ? "Resolver lembrete" : "Anotar depois da entrega"}
               </Button>
               <Button onClick={() => reopenTask(task.id)}>
                 <RotateCcw aria-hidden="true" className="size-4" />
@@ -252,7 +254,7 @@ function TaskDetail({
               {task.status !== "waiting" && (
                 <Button onClick={markWaiting}>
                   <Hourglass aria-hidden="true" className="size-4" />
-                  Aguardando
+                  Aguardar resposta
                 </Button>
               )}
               <Button onClick={() => completeTask(task.id)}>
@@ -265,8 +267,8 @@ function TaskDetail({
       )}
 
       <div className="mt-8 flex flex-col gap-7">
-        {completed && task.reviewDate && (
-          <DetailSection title="Acompanhamento">
+        {task.reviewDate && (completed || (reminderArrived && !showWaiting)) && (
+          <DetailSection title="Lembrete">
             <button
               type="button"
               disabled={archived}
@@ -280,15 +282,17 @@ function TaskDetail({
                 {describeDate({ kind: "review", date: task.reviewDate, overdue: task.reviewDate < today }, today)}
               </span>
               <span className="text-label text-ink-muted">
-                A entrega está concluída. Quando falar com o responsável, registre como foi aqui.
+                {completed
+                  ? "A tarefa está concluída. Quando verificar, toque aqui e anote como foi."
+                  : "Chegou o dia de voltar a esta tarefa. Toque aqui para anotar como foi e encerrar o lembrete."}
               </span>
             </button>
           </DetailSection>
         )}
 
-        {/* Concluída sem próxima ação: nada a mostrar (o acompanhamento, se houver, fica acima). */}
+        {/* Concluída sem próximo passo: nada a mostrar (o lembrete, se houver, fica acima). */}
         {(task.nextAction || !completed) && (
-          <DetailSection title="Próxima ação">
+          <DetailSection title="Próximo passo">
             {task.nextAction ? (
               <p className="flex items-start gap-2.5 rounded-card border-l-2 border-primary bg-primary/8 px-4 py-3 text-emph text-ink">
                 <ArrowRight aria-hidden="true" className="mt-1 size-4 shrink-0 text-primary" />
@@ -309,7 +313,7 @@ function TaskDetail({
         )}
 
         {showWaiting && (
-          <DetailSection title="Aguardando">
+          <DetailSection title={task.status === "blocked" ? "Bloqueada por" : "Aguardando"}>
             <div className="rounded-card border-l-2 border-status-waiting bg-status-waiting/8 px-4 py-3">
               <p className="text-body text-ink">{task.waitingFor}</p>
               {task.reviewDate && (

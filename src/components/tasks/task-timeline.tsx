@@ -18,7 +18,7 @@ function EntryBody({ update, previousStatus }: { update: TaskUpdate; previousSta
   if (update.type === "reopened") {
     lines.push({
       key: "type",
-      text: update.status === "todo" ? "Tarefa reaberta." : `Tarefa reaberta em ${STATUS_LABELS[update.status]}.`,
+      text: update.status === "todo" ? "Tarefa reaberta." : `Tarefa reaberta: ${STATUS_LABELS[update.status]}.`,
     });
   }
   if (update.type === "status_change") {
@@ -26,21 +26,21 @@ function EntryBody({ update, previousStatus }: { update: TaskUpdate; previousSta
   }
   if (update.done) lines.push({ key: "done", text: update.done });
   if (update.waitingFor) lines.push({ key: "waiting", text: `Aguardando: ${update.waitingFor}`, tone: "waiting" });
-  if (update.nextAction) lines.push({ key: "next", text: `Próxima ação: ${update.nextAction}` });
+  if (update.nextAction) lines.push({ key: "next", text: `Próximo passo: ${update.nextAction}` });
   if (update.reviewDate) {
-    const label = isFollowUp ? "Novo acompanhamento em" : "Revisar em";
+    const label = isFollowUp ? "Novo lembrete para" : "Lembrete para";
     lines.push({ key: "review", text: `${label} ${formatFullDate(update.reviewDate)}`, tone: "muted" });
   }
   if (update.note) lines.push({ key: "note", text: update.note, tone: "muted" });
 
   const showStatusTag = update.type === "progress" && statusChanged;
   if (lines.length === 0 && !showStatusTag) {
-    lines.push({ key: "empty", text: isFollowUp ? "Acompanhamento feito." : "Andamento registrado.", tone: "muted" });
+    lines.push({ key: "empty", text: isFollowUp ? "Registrado." : "Andamento registrado.", tone: "muted" });
   }
 
   return (
     <div className="flex flex-col gap-0.5 text-compact">
-      {isFollowUp && <span className="text-meta font-medium text-primary">Acompanhamento</span>}
+      {isFollowUp && <span className="text-meta font-medium text-primary">Lembrete resolvido</span>}
       {showStatusTag && (
         <span className="text-meta font-medium" style={{ color: STATUS_COLOR[update.status] }}>
           → {STATUS_LABELS[update.status]}

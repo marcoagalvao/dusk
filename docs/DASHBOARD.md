@@ -26,19 +26,20 @@ Valem para qualquer bloco novo:
 | --- | --- | --- | --- |
 | Frase de situação | Como está o dia? | `today-hero.tsx` | `todayPulse` |
 | Anel e número grande | Quanto falta hoje? | `today-hero.tsx`, `ProgressRing` | `todayPulse` |
-| Seis contadores | O que exige ação? Atrasadas, Urgentes, Bloqueadas, Aguardando, Para revisar, Feitas hoje | `today-hero.tsx` | `todayPulse` |
-| Para fazer hoje | O que faço agora? | `dashboard-view.tsx` | `getTodayAgenda` + `isTodayRelevant` |
-| Também pedem atenção | O que mais não pode esquecer? | `dashboard-view.tsx` | `getTodayAgenda` |
-| Onde está a urgência | Onde se concentra o risco? | `pending-map.tsx` | `priorityMatrix` |
-| Em que pé estão as abertas | Quanto está parado ou andando? | `pending-map.tsx` | `statusBreakdown` |
-| O que vem nas próximas duas semanas | O que está chegando? | `upcoming-calendar.tsx` | `upcomingDays` |
+| Seis contadores | O que exige ação? Atrasadas, Urgentes, Bloqueadas, Aguardando, Lembretes, Concluídas hoje | `today-hero.tsx` | `todayPulse` |
+| Aviso do foco anterior | O que ficou de ontem? | `stale-focus-banner.tsx` | `getStaleFocus` |
+| Hoje | O que faço agora? | `dashboard-view.tsx` | `getTodayAgenda` + `isTodayRelevant`, só abertas |
+| Outras que pedem atenção | O que mais não pode esquecer? | `dashboard-view.tsx` | `getTodayAgenda`, só abertas |
+| Aguardando resposta, Próximos lembretes, Projetos recentes | De quem espero, quando voltar a olhar, o que mexi por último | `waiting-item.tsx`, `review-item.tsx`, `dashboard-view.tsx` | consultas de `task-queries.ts`, com `waitingSince` |
+| Prioridade e prazo | Onde se concentra o risco? | `pending-map.tsx` | `priorityMatrix` |
+| Situação das abertas | Quanto está parado ou andando? | `pending-map.tsx` | `statusBreakdown` |
+| Próximas duas semanas | O que está chegando? | `upcoming-calendar.tsx` | `upcomingDays` |
 | Como foi sua semana, quinzena ou mês | Estou dando conta? | `period-report-section.tsx` | `periodReport`, `completionStreak` |
 | Concluídas e criadas por dia | A fila cresce ou diminui? | `DailyBars` | `periodReport` |
 | Concluídas por projeto | Onde foi meu esforço? | `LabeledBar` | `periodReport` |
 | Seus dias de atividade | Tenho constância? | `Heatmap` | `activityHeatmap` |
 | Há quanto tempo estão abertas | O que foi esquecido? | `LabeledBar` | `agingBuckets` |
-| Aguardando resposta de quem | Quem devo cobrar? | `period-report-section.tsx` | `waitingByPerson` |
-| Aguardando resposta, Para revisar em breve, Projetos recentes | Detalhe de cada grupo | `dashboard-view.tsx` | consultas de `task-queries.ts` |
+| Quem mais deve resposta | Quem devo cobrar? | `period-report-section.tsx` | `waitingByPerson` |
 
 ## Definições
 
@@ -93,9 +94,9 @@ Ideias levantadas para o painel e o que aconteceu com cada uma.
 - Sugestão de foco do dia a partir de prazo e prioridade.
 
 **Qualidade da lista**
-- Tarefas abertas sem próxima ação.
+- Tarefas abertas sem próximo passo.
 - Tarefas sem atualização há muito tempo.
-- Aguardando sem data de revisão.
+- Aguardando sem lembrete.
 - Tempo médio em cada status, para mostrar onde as tarefas travam.
 
 **Projetos**

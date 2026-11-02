@@ -79,7 +79,7 @@ function FilterGroup({ title, children }: { title: string; children: ReactNode }
 }
 
 interface TaskToolbarProps {
-  /** No Kanban, status e abertas/concluídas são as próprias colunas. */
+  /** No quadro, status e abertas/concluídas são as próprias colunas. */
   hideStatusFilters?: boolean;
   hideSort?: boolean;
   trailing?: ReactNode;
@@ -118,7 +118,7 @@ export function TaskToolbar({ hideStatusFilters, hideSort, trailing }: TaskToolb
                 setFilters({ search: "" });
               }
             }}
-            placeholder="Buscar por título, projeto, espera, próxima ação…"
+            placeholder="Buscar nesta lista"
             autoComplete="off"
             className="h-10 w-full rounded-control border border-line bg-surface pr-9 pl-9 text-emph text-ink transition-[border-color,box-shadow] duration-120 hover:border-ink-subtle/70 focus:border-primary focus:ring-3 focus:ring-primary/20 focus:outline-none sm:text-compact [&::-webkit-search-cancel-button]:hidden"
           />
@@ -191,7 +191,7 @@ export function TaskToolbar({ hideStatusFilters, hideSort, trailing }: TaskToolb
                 No foco de hoje
               </Chip>
               <Chip active={filters.reviewDue} onClick={() => setFilters({ reviewDue: !filters.reviewDue })}>
-                Revisão vencida
+                Lembrete chegou
               </Chip>
             </FilterGroup>
             <div className="flex flex-col gap-2">
@@ -269,7 +269,7 @@ function ActiveFilterChips({ hideStatusFilters }: { hideStatusFilters?: boolean 
   }
   if (filters.due) chips.push({ key: "due", label: DUE_FILTER_LABELS[filters.due], clear: { due: null } });
   if (filters.focusToday) chips.push({ key: "focus", label: "No foco de hoje", clear: { focusToday: false } });
-  if (filters.reviewDue) chips.push({ key: "review", label: "Revisão vencida", clear: { reviewDue: false } });
+  if (filters.reviewDue) chips.push({ key: "review", label: "Lembrete chegou", clear: { reviewDue: false } });
   if (filters.projectId) {
     const name = filters.projectId === NO_PROJECT ? "Sem projeto" : (projectsById.get(filters.projectId)?.name ?? "Projeto removido");
     chips.push({ key: "project", label: name, clear: { projectId: null } });

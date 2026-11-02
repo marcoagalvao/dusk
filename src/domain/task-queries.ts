@@ -3,6 +3,7 @@ import { normalizeForSearch } from "@/lib/utils/text";
 
 import type { Project } from "./project";
 import { PRIORITY_WEIGHT, type Task, type TaskPriority, type TaskStatus } from "./task";
+import { SOON_DAYS } from "./task-constants";
 
 // ---------------------------------------------------------------------------
 // Predicados
@@ -17,25 +18,25 @@ export const isOverdue = (task: Task, today: DateKey) =>
 
 export const isDueToday = (task: Task, today: DateKey) => isOpen(task) && task.dueDate === today;
 
-/** Revisão chegou (hoje ou antes) em qualquer tarefa não arquivada, inclusive concluída. */
+/** Lembrete chegou (hoje ou antes) em qualquer tarefa não arquivada, inclusive concluída. */
 export const isReviewReached = (task: Task, today: DateKey) =>
   !isArchived(task) && Boolean(task.reviewDate) && task.reviewDate! <= today;
 
-/** Revisão chegou numa tarefa aberta: entra em "Precisa da sua atenção" e na ordenação. */
+/** Lembrete chegou numa tarefa aberta: entra em "Hoje" e na ordenação. */
 export const isReviewDue = (task: Task, today: DateKey) => isOpen(task) && isReviewReached(task, today);
 
 export const isInFocus = (task: Task, today: DateKey) => !isArchived(task) && task.focusDate === today;
 
-/** Prazo ou revisão no futuro. */
+/** Prazo ou lembrete no futuro. */
 export const hasFutureDate = (task: Task, today: DateKey) =>
   (Boolean(task.dueDate) && task.dueDate! > today) || (Boolean(task.reviewDate) && task.reviewDate! > today);
 
 // ---------------------------------------------------------------------------
-// Precisa da sua atenção (PRD §10)
+// O que pede atenção (PRD §10)
 // ---------------------------------------------------------------------------
 
 /**
- * Posição da tarefa na lista "Precisa da sua atenção", ou `null` se não entra.
+ * Posição da tarefa na lista do que pede atenção, ou `null` se não entra.
  * Ordem: atrasadas, review vencido, urgentes, vencendo hoje, foco do dia com
  * pendência (aguardando), bloqueadas.
  */
@@ -59,16 +60,16 @@ export function getAttentionTasks(tasks: readonly Task[], today: DateKey): Task[
 }
 
 // ---------------------------------------------------------------------------
-// Revisões (follow-up, PRD §14)
+// Lembretes (follow-up, PRD §14)
 // ---------------------------------------------------------------------------
 
-/** Janela de revisões futuras mostrada na Home. */
+/** Janela de lembretes futuros mostrada na Home. */
 export const REVIEW_HORIZON_DAYS = 7;
 
 /**
- * Revisões que já chegaram ou chegam dentro da janela, da mais antiga para a
- * mais distante. Inclui tarefas concluídas: a revisão pode ser um
- * acompanhamento depois da entrega (ex.: confirmar com o cliente).
+ * Lembretes que já chegaram ou chegam dentro da janela, do mais antigo para o
+ * mais distante. Inclui tarefas concluídas: o lembrete pode ser uma
+ * verificação depois da entrega (ex.: confirmar com o cliente).
  */
 export function getUpcomingReviews(
   tasks: readonly Task[],
@@ -92,7 +93,7 @@ export const TASK_SORTS = ["smart", "due", "priority", "newest", "oldest", "alph
 export type TaskSort = (typeof TASK_SORTS)[number];
 
 export const SORT_LABELS: Record<TaskSort, string> = {
-  smart: "Inteligente",
+  smart: "Recomendada",
   due: "Prazo mais próximo",
   priority: "Prioridade",
   newest: "Mais recente",
@@ -104,14 +105,18 @@ function compareUpdatedDesc(a: Task, b: Task): number {
   return b.updatedAt.localeCompare(a.updatedAt);
 }
 
-/** Atrasadas → review vencido → urgentes → prazo hoje → prazo futuro → sem prazo. */
+/** Atrasadas → lembrete que chegou → urgentes → prazo hoje → prazo em até 7 dias → o resto. */
 export function smartRank(task: Task, today: DateKey): number {
   if (isOverdue(task, today)) return 0;
   if (isReviewDue(task, today)) return 1;
   if (task.priority === "urgent") return 2;
   if (task.dueDate === today) return 3;
-  if (task.dueDate) return 4;
+  if (task.dueDate && task.dueDate <= addDaysToKey(today, SOON_DAYS)) return 4;
   return 5;
+}
+
+function comparePriority(a: Task, b: Task): number {
+  return PRIORITY_WEIGHT[a.priority] - PRIORITY_WEIGHT[b.priority];
 }
 
 function compareDue(a: Task, b: Task): number {
@@ -127,13 +132,17 @@ export function sortTasks(tasks: readonly Task[], sort: TaskSort, today: DateKey
   const smart = (a: Task, b: Task) => {
     // Concluídas: a conclusão mais recente primeiro (prazo e urgência já não importam).
     if (isCompleted(a) && isCompleted(b)) return (b.completedAt ?? "").localeCompare(a.completedAt ?? "");
-    return smartRank(a, today) - smartRank(b, today) || compareDue(a, b) || compareUpdatedDesc(a, b);
+    const rank = smartRank(a, today) - smartRank(b, today);
+    if (rank !== 0) return rank;
+    // Sem prazo próximo, a data ainda não pressiona: a importância decide. Com prazo próximo, a data decide e a importância desempata.
+    const order = smartRank(a, today) === 5 ? comparePriority(a, b) || compareDue(a, b) : compareDue(a, b) || comparePriority(a, b);
+    return order || compareUpdatedDesc(a, b);
   };
 
   const comparators: Record<TaskSort, (a: Task, b: Task) => number> = {
     smart,
     due: (a, b) => compareDue(a, b) || compareUpdatedDesc(a, b),
-    priority: (a, b) => PRIORITY_WEIGHT[a.priority] - PRIORITY_WEIGHT[b.priority] || smart(a, b),
+    priority: (a, b) => comparePriority(a, b) || smart(a, b),
     newest: (a, b) => b.createdAt.localeCompare(a.createdAt),
     oldest: (a, b) => a.createdAt.localeCompare(b.createdAt),
     alpha: (a, b) => collator.compare(a.title, b.title),
@@ -149,7 +158,7 @@ export function sortTasks(tasks: readonly Task[], sort: TaskSort, today: DateKey
 export const TASK_SCOPES = ["all", "today", "upcoming", "waiting", "overdue"] as const;
 export type TaskScope = (typeof TASK_SCOPES)[number];
 
-/** Hoje: foco do dia, prazo hoje/vencido ou revisão que chegou. */
+/** Hoje: foco do dia, prazo hoje/vencido ou lembrete que chegou. */
 export function isTodayRelevant(task: Task, today: DateKey): boolean {
   return (
     isInFocus(task, today) ||
@@ -173,7 +182,7 @@ export function matchesScope(task: Task, scope: TaskScope, today: DateKey): bool
   }
 }
 
-/** Data futura mais próxima entre prazo e revisão. */
+/** Data futura mais próxima entre prazo e lembrete. */
 export function nearestFutureDate(task: Task, today: DateKey): DateKey | undefined {
   return [task.dueDate, task.reviewDate]
     .filter((date): date is DateKey => Boolean(date) && date! > today)
@@ -199,6 +208,29 @@ export function matchesSearch(task: Task, normalizedQuery: string, projectName?:
     .filter(Boolean)
     .join("\n");
   return normalizeForSearch(haystack).includes(normalizedQuery);
+}
+
+const SEARCH_RESULTS_LIMIT = 30;
+
+/** Busca global: título que começa com o termo, depois título que contém, depois o resto; abertas antes das concluídas. */
+export function searchTasks(tasks: readonly Task[], query: string, projectsById: ReadonlyMap<string, Project>): Task[] {
+  const normalized = normalizeForSearch(query).trim();
+  if (!normalized) return [];
+
+  const score = (task: Task) => {
+    const title = normalizeForSearch(task.title);
+    return (title.startsWith(normalized) ? 0 : title.includes(normalized) ? 1 : 2) + (isCompleted(task) ? 3 : 0);
+  };
+
+  return tasks
+    .filter(
+      (task) =>
+        !isArchived(task) && matchesSearch(task, normalized, task.projectId ? projectsById.get(task.projectId)?.name : undefined),
+    )
+    .map((task) => ({ task, score: score(task) }))
+    .sort((a, b) => a.score - b.score || compareUpdatedDesc(a.task, b.task))
+    .slice(0, SEARCH_RESULTS_LIMIT)
+    .map((entry) => entry.task);
 }
 
 export const DUE_FILTERS = ["overdue", "today", "week", "soon", "later", "none"] as const;
@@ -291,7 +323,7 @@ function matchesDueFilter(task: Task, due: DueFilter, today: DateKey): boolean {
 
 /**
  * Filtra tarefas não arquivadas. Um filtro de status explícito tem precedência
- * sobre o filtro abertas/concluídas (escolher "Concluído" mostra concluídas).
+ * sobre o filtro abertas/concluídas (escolher "Concluída" mostra concluídas).
  * Um recorte do painel traz exatamente o que foi contado: pode incluir arquivadas
  * (o relatório as conta) e não é reduzido às abertas pelo filtro padrão.
  */
@@ -365,7 +397,7 @@ export function groupByDate(
 }
 
 // ---------------------------------------------------------------------------
-// Data relevante exibida na linha (prazo ou revisão)
+// Data relevante exibida na linha (prazo ou lembrete)
 // ---------------------------------------------------------------------------
 
 export interface RelevantDate {
@@ -375,9 +407,9 @@ export interface RelevantDate {
 }
 
 /**
- * Prazo tem prioridade, exceto quando a revisão já chegou e o prazo ainda não:
- * nesse caso a revisão é a informação acionável. Em tarefas concluídas o prazo
- * deixa de importar e só a revisão (acompanhamento pós-entrega) é mostrada.
+ * Prazo tem prioridade, exceto quando o lembrete já chegou e o prazo ainda não:
+ * nesse caso o lembrete é a informação acionável. Em tarefas concluídas o prazo
+ * deixa de importar e só o lembrete (verificação pós-entrega) é mostrado.
  */
 export function relevantDate(task: Task, today: DateKey): RelevantDate | null {
   const review = task.reviewDate
@@ -391,6 +423,38 @@ export function relevantDate(task: Task, today: DateKey): RelevantDate | null {
   if (review && reviewDue && !dueReached) return review;
   if (task.dueDate) return { kind: "due", date: task.dueDate, overdue: task.dueDate < today };
   return review;
+}
+
+/** A outra data da tarefa aberta, que `relevantDate` não mostrou. */
+export function otherDate(task: Task, today: DateKey): RelevantDate | null {
+  if (isCompleted(task) || !task.dueDate || !task.reviewDate || task.dueDate === task.reviewDate) return null;
+  return relevantDate(task, today)?.kind === "due"
+    ? { kind: "review", date: task.reviewDate, overdue: task.reviewDate < today }
+    : { kind: "due", date: task.dueDate, overdue: task.dueDate < today };
+}
+
+// ---------------------------------------------------------------------------
+// Espera e foco
+// ---------------------------------------------------------------------------
+
+/**
+ * Desde quando a tarefa está no status atual, pelo histórico: registros seguidos
+ * no mesmo status não reiniciam a conta, e editar outros campos não gera registro.
+ */
+export function waitingSince(task: Task): string {
+  let since = task.createdAt;
+  for (let index = task.updates.length - 1; index >= 0 && task.updates[index].status === task.status; index--) {
+    since = task.updates[index].createdAt;
+  }
+  return since;
+}
+
+const STALE_FOCUS_DAYS = 7;
+
+/** Foco de dias recentes que não foi concluído: o app oferece trazer para hoje. */
+export function getStaleFocus(tasks: readonly Task[], today: DateKey): Task[] {
+  const limit = addDaysToKey(today, -STALE_FOCUS_DAYS);
+  return tasks.filter((task) => isOpen(task) && Boolean(task.focusDate) && task.focusDate! < today && task.focusDate! >= limit);
 }
 
 // ---------------------------------------------------------------------------

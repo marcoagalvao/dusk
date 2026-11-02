@@ -20,15 +20,15 @@ interface FollowUpDialogProps {
 }
 
 /**
- * Acompanhamento pós-entrega: registra no histórico como foi a verificação
+ * Resolver o lembrete de uma tarefa concluída: registra no histórico como foi
  * (ex.: "cliente testou e está tudo ok") sem reabrir a tarefa. Por padrão
- * encerra o lembrete; preencher a data agenda um novo acompanhamento.
+ * encerra o lembrete; preencher a data marca um novo.
  */
 export function FollowUpDialog({ task, open, onOpenChange }: FollowUpDialogProps) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent placement="top">
-        <DialogHeader title="Registrar acompanhamento" description={task.title} />
+        <DialogHeader title={task.reviewDate ? "Resolver lembrete" : "Anotar depois da entrega"} description={task.title} />
         <FollowUpForm task={task} onDone={() => onOpenChange(false)} />
       </DialogContent>
     </Dialog>
@@ -58,7 +58,7 @@ function FollowUpForm({ task, onDone }: { task: Task; onDone: () => void }) {
     event?.preventDefault();
     if (!canSave || submittedRef.current) return;
     submittedRef.current = true;
-    saveProgress(task.id, input, reviewDate ? "Acompanhamento registrado e reagendado" : "Acompanhamento registrado");
+    saveProgress(task.id, input, reviewDate ? "Registrado. Novo lembrete marcado." : "Registrado");
     onDone();
   };
 
@@ -80,11 +80,11 @@ function FollowUpForm({ task, onDone }: { task: Task; onDone: () => void }) {
       </Field>
 
       <Field
-        label="Acompanhar de novo em"
+        label="Lembrar de novo em"
         htmlFor={reviewId}
         hint={
           task.reviewDate && !reviewDate
-            ? `Vazio encerra o lembrete (${formatRelativeDay(task.reviewDate, today).toLowerCase()}).`
+            ? `Vazio encerra o lembrete de ${formatRelativeDay(task.reviewDate, today).toLowerCase()}.`
             : "Opcional, se precisar voltar a olhar."
         }
       >
@@ -96,7 +96,7 @@ function FollowUpForm({ task, onDone }: { task: Task; onDone: () => void }) {
           Cancelar
         </Button>
         <Button type="submit" variant="primary" disabled={!canSave}>
-          Registrar acompanhamento
+          Salvar
         </Button>
       </DialogFooter>
     </form>

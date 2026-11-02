@@ -1,4 +1,4 @@
-/** Normaliza texto para busca: minúsculas e sem acentos ("Revisão" → "revisao"). */
+/** Normaliza texto para busca: minúsculas e sem acentos ("Lembrete de São Paulo" → "lembrete de sao paulo"). */
 export function normalizeForSearch(value: string): string {
   return value
     .normalize("NFD")

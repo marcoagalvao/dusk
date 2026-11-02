@@ -1,6 +1,6 @@
 "use client";
 
-import { Archive, ChevronRight, Ellipsis, FolderKanban, House, ListTodo, Plus, Settings, type LucideIcon } from "lucide-react";
+import { Archive, ChevronRight, CircleHelp, Ellipsis, FolderKanban, House, ListTodo, Plus, Search, Settings, type LucideIcon } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useMemo, useState } from "react";
@@ -38,6 +38,7 @@ export function MobileNav({ className }: { className?: string }) {
   const moreActive =
     TASK_VIEW_NAV.some((item) => isActivePath(pathname, item.href, true)) ||
     pathname === "/archive" ||
+    pathname === "/help" ||
     pathname === "/settings";
 
   return (
@@ -96,6 +97,7 @@ export function MobileNav({ className }: { className?: string }) {
 function MoreMenu({ pathname, onNavigate }: { pathname: string; onNavigate: () => void }) {
   const tasks = useTasks();
   const today = useToday();
+  const setCommandOpen = useUiStore((state) => state.setCommandOpen);
   const counts = useMemo(
     () => Object.fromEntries(TASK_VIEW_NAV.map((item) => [item.scope, tasks.filter((t) => matchesScope(t, item.scope, today)).length])),
     [tasks, today],
@@ -110,11 +112,26 @@ function MoreMenu({ pathname, onNavigate }: { pathname: string; onNavigate: () =
       alert: item.scope === "overdue",
     })),
     { href: "/archive", label: "Arquivo", icon: Archive },
+    { href: "/help", label: "Como funciona", icon: CircleHelp },
     { href: "/settings", label: "Configurações", icon: Settings },
   ];
 
   return (
     <ul className="-mx-1 flex flex-col">
+      <li>
+        <button
+          type="button"
+          onClick={() => {
+            onNavigate();
+            setCommandOpen(true);
+          }}
+          className="focus-ring flex h-12 w-full items-center gap-3 rounded-control px-3 text-left text-body text-ink transition-colors duration-120 active:bg-raised"
+        >
+          <Search aria-hidden="true" className="size-5 text-ink-subtle" />
+          <span className="flex-1">Buscar</span>
+          <ChevronRight aria-hidden="true" className="size-4 text-ink-subtle" />
+        </button>
+      </li>
       {rows.map((row, index) => (
         <li key={row.href} className={cn(index === TASK_VIEW_NAV.length && "mt-2 border-t border-line/60 pt-2")}>
           <Link

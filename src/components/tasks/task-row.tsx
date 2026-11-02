@@ -1,6 +1,6 @@
 "use client";
 
-import { Archive, ArrowRight, ListChecks, Sun } from "lucide-react";
+import { Archive, ArrowRight, Check, ListChecks, Repeat, Sun } from "lucide-react";
 import Link from "next/link";
 import { memo, useState } from "react";
 
@@ -9,14 +9,14 @@ import { ProjectLabel } from "@/components/ui/badges";
 import { StatusGlyph } from "@/components/ui/status-glyph";
 import { STATUS_COLOR } from "@/components/ui/tokens";
 import type { Project } from "@/domain/project";
-import { STATUS_LABELS, STATUSES_WITH_WAITING, type Task } from "@/domain/task";
+import { RECURRENCE_LABELS, STATUS_LABELS, STATUSES_WITH_WAITING, type Task } from "@/domain/task";
 import { isArchived, isInFocus } from "@/domain/task-queries";
 import { subtaskProgress } from "@/domain/task-rules";
 import { cn } from "@/lib/utils/cn";
 
 import { TaskCheckbox } from "./task-checkbox";
 import { CompactPriorityControl } from "./task-detail-controls";
-import { TaskDateLabel } from "./task-date";
+import { TaskDateLabel, TaskOtherDateLabel } from "./task-date";
 
 interface TaskRowProps {
   task: Task;
@@ -26,6 +26,9 @@ interface TaskRowProps {
   showNextAction?: boolean;
   /** Na própria seção de foco o selo "Foco" é redundante. */
   showFocusBadge?: boolean;
+  /** No modo de seleção, a linha marca a tarefa em vez de abri-la. */
+  selected?: boolean;
+  onToggleSelect?: (id: string) => void;
 }
 
 /**
@@ -39,6 +42,8 @@ export const TaskRow = memo(function TaskRow({
   showProject = true,
   showNextAction = true,
   showFocusBadge = true,
+  selected = false,
+  onToggleSelect,
 }: TaskRowProps) {
   const [completing, setCompleting] = useState(false);
   const completed = task.status === "completed";
@@ -46,15 +51,27 @@ export const TaskRow = memo(function TaskRow({
   const focused = isInFocus(task, today);
   const subtasks = subtaskProgress(task);
   const showWaiting = STATUSES_WITH_WAITING.includes(task.status) && task.waitingFor;
+  const selecting = Boolean(onToggleSelect);
 
   return (
     <li
       className={cn(
         "group relative flex items-start gap-2 rounded-card py-2.5 pr-2 pl-1 transition-[background-color,opacity] duration-220 hover:bg-surface/80 sm:pr-3",
         completing && "opacity-55",
+        selected && "bg-primary/10 hover:bg-primary/10",
       )}
     >
-      {archived ? (
+      {selecting ? (
+        <span
+          aria-hidden="true"
+          className={cn(
+            "mx-2.5 mt-0.5 grid size-5 shrink-0 place-items-center rounded-[6px] border",
+            selected ? "border-primary bg-primary text-on-primary" : "border-ink-subtle",
+          )}
+        >
+          {selected && <Check className="size-3.5" />}
+        </span>
+      ) : archived ? (
         <span className="-my-2 grid size-10 shrink-0 place-items-center">
           <StatusGlyph status={task.status} size={18} />
         </span>
@@ -64,17 +81,33 @@ export const TaskRow = memo(function TaskRow({
 
       <div className="min-w-0 flex-1">
         <div className="flex items-start gap-3">
-          <Link
-            href={`/tasks/${task.id}`}
-            className={cn(
-              "focus-ring min-w-0 flex-1 rounded-[6px] text-body leading-snug font-medium after:absolute after:inset-0 after:rounded-card",
-              completed || completing ? "text-ink-subtle line-through decoration-ink-subtle/60" : "text-ink",
-            )}
-          >
-            {task.title}
-          </Link>
-          <span className="mt-0.5 hidden shrink-0 text-label sm:block">
+          {selecting ? (
+            <button
+              type="button"
+              role="checkbox"
+              aria-checked={selected}
+              onClick={() => onToggleSelect?.(task.id)}
+              className={cn(
+                "focus-ring min-w-0 flex-1 rounded-[6px] text-left text-body leading-snug font-medium after:absolute after:inset-0 after:rounded-card",
+                completed ? "text-ink-subtle line-through decoration-ink-subtle/60" : "text-ink",
+              )}
+            >
+              {task.title}
+            </button>
+          ) : (
+            <Link
+              href={`/tasks/${task.id}`}
+              className={cn(
+                "focus-ring min-w-0 flex-1 rounded-[6px] text-body leading-snug font-medium after:absolute after:inset-0 after:rounded-card",
+                completed || completing ? "text-ink-subtle line-through decoration-ink-subtle/60" : "text-ink",
+              )}
+            >
+              {task.title}
+            </Link>
+          )}
+          <span className="mt-0.5 hidden shrink-0 flex-col items-end gap-0.5 text-label sm:flex">
             <TaskDateLabel task={task} today={today} />
+            <TaskOtherDateLabel task={task} today={today} />
           </span>
         </div>
 
@@ -84,7 +117,7 @@ export const TaskRow = memo(function TaskRow({
             {STATUS_LABELS[task.status]}
             {showWaiting && <span className="max-w-48 truncate text-ink-muted">· {task.waitingFor}</span>}
           </span>
-          <CompactPriorityControl task={task} disabled={archived} />
+          <CompactPriorityControl task={task} disabled={archived || selecting} />
           {archived && (
             <span className="inline-flex items-center gap-1 text-ink-muted">
               <Archive aria-hidden="true" className="size-3.5" />
@@ -103,21 +136,28 @@ export const TaskRow = memo(function TaskRow({
               Foco
             </span>
           )}
-          <span className="sm:hidden">
+          {task.recurrence && (
+            <span className="inline-flex items-center gap-1 text-ink-muted">
+              <Repeat aria-hidden="true" className="size-3.5" />
+              {RECURRENCE_LABELS[task.recurrence]}
+            </span>
+          )}
+          <span className="contents sm:hidden">
             <TaskDateLabel task={task} today={today} />
+            <TaskOtherDateLabel task={task} today={today} />
           </span>
         </div>
 
         {showNextAction && task.nextAction && !completed && (
           <p className="mt-1 flex min-w-0 items-center gap-1.5 text-label text-ink-muted">
             <ArrowRight aria-hidden="true" className="size-3.5 shrink-0 text-primary" />
-            <span className="sr-only">Próxima ação:</span>
+            <span className="sr-only">Próximo passo:</span>
             <span className="truncate">{task.nextAction}</span>
           </p>
         )}
       </div>
 
-      {!completed && (
+      {!completed && !selecting && (
         <button
           type="button"
           onClick={() => toggleFocus(task, today)}

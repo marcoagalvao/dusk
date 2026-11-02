@@ -1,4 +1,5 @@
 import type { TaskStatus } from "./task";
+import { leavesWaiting } from "./task-rules";
 
 export type ProgressTextField = "done" | "waitingFor" | "nextAction";
 export type ProgressFocusField = ProgressTextField | "reviewDate";
@@ -45,9 +46,9 @@ export const PROGRESS_PRESETS: readonly ProgressPreset[] = [
   },
   {
     id: "in-review",
-    label: "Em revisão",
+    label: "Em análise",
     status: "in_progress",
-    fill: { done: "Versão em revisão." },
+    fill: { done: "Versão em análise." },
   },
   {
     id: "response-received",
@@ -65,9 +66,9 @@ export const PROGRESS_PRESETS: readonly ProgressPreset[] = [
 ];
 
 /**
- * Marca no histórico um acompanhamento pós-entrega (tarefa concluída que tinha
- * revisão marcada, ex.: "perguntar ao cliente se está tudo ok"). Não é um preset
- * do modal de andamento; é registrado pelo diálogo de acompanhamento.
+ * Marca no histórico um lembrete resolvido depois da entrega (tarefa concluída
+ * com lembrete, ex.: "perguntar ao cliente se está tudo ok"). Não é um preset do
+ * modal de andamento; é registrado pelo diálogo de resolver lembrete.
  */
 export const FOLLOW_UP_PRESET_ID = "follow-up";
 
@@ -85,8 +86,13 @@ export interface ProgressFormValues {
   note: string;
 }
 
+/** Sair da espera limpa a data na hora: o que está na tela é o que será salvo, e dá para escolher outra. */
+export function changeFormStatus(values: ProgressFormValues, status: TaskStatus): ProgressFormValues {
+  return { ...values, status, reviewDate: leavesWaiting(values.status, status) ? "" : values.reviewDate };
+}
+
 export function applyPreset(values: ProgressFormValues, preset: ProgressPreset): ProgressFormValues {
-  const next: ProgressFormValues = { ...values, ...preset.fill, status: preset.status, preset: preset.id };
+  const next: ProgressFormValues = { ...changeFormStatus(values, preset.status), ...preset.fill, preset: preset.id };
   for (const field of preset.clear ?? []) next[field] = "";
   return next;
 }

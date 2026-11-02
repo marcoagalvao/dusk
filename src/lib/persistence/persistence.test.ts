@@ -58,6 +58,24 @@ const validState = {
 };
 
 describe("parsePersistedState", () => {
+  describe("cor do projeto", () => {
+    const colorAfterParsing = (color: unknown) => {
+      const result = parsePersistedState({ ...validState, projects: [{ ...validState.projects[0], color }] });
+      if (!result.ok) throw new Error("esperava ok");
+      return result.state.projects[0].color;
+    };
+
+    it("mantém cor da paleta e cor livre, esta em minúsculas", () => {
+      expect(colorAfterParsing("sage")).toBe("sage");
+      expect(colorAfterParsing("#FF8000")).toBe("#ff8000");
+    });
+
+    it("troca valor inválido por lavanda sem perder o projeto", () => {
+      expect(colorAfterParsing("#ff80")).toBe("lavender");
+      expect(colorAfterParsing("verde")).toBe("lavender");
+    });
+  });
+
   it("aceita estado válido", () => {
     const result = parsePersistedState(validState);
     expect(result.ok).toBe(true);

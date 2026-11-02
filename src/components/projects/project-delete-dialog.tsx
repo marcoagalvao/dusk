@@ -48,7 +48,7 @@ function DeleteForm({ project, onDone, onDeleted }: { project: Project; onDone: 
 
   const confirm = () => {
     if (taskCount > 0 && choice === "archive") {
-      archiveProject(project.id);
+      archiveProject(project.id, { withTasks: true });
       onDone();
       return;
     }
@@ -81,8 +81,8 @@ function DeleteForm({ project, onDone, onDeleted }: { project: Project; onDone: 
   const allOptions: Array<{ value: Choice; title: string; description: string; disabled?: boolean }> = [
     {
       value: "archive",
-      title: "Arquivar o projeto",
-      description: "Sai da navegação e do fluxo normal. Tarefas e histórico ficam guardados.",
+      title: "Arquivar em vez de excluir",
+      description: "O projeto e as tarefas saem das listas e ficam guardados no Arquivo, com o histórico.",
     },
     {
       value: "move",

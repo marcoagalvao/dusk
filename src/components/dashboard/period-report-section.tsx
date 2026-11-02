@@ -4,7 +4,7 @@ import { ArrowDown, ArrowUp, ChevronRight, Flame, Minus } from "lucide-react";
 import { useMemo, useState, type ComponentProps, type ReactNode } from "react";
 
 import { SegmentedControl } from "@/components/ui/misc";
-import { PROJECT_COLOR } from "@/components/ui/tokens";
+import { projectColorValue } from "@/components/ui/tokens";
 import {
   activityHeatmap,
   agingBuckets,
@@ -193,7 +193,7 @@ export function PeriodReportSection({ tasks, projects, today }: { tasks: readonl
                   label={row.name}
                   value={row.completed}
                   max={projectMax}
-                  color={row.color ? PROJECT_COLOR[row.color] : NEUTRAL_BAR}
+                  color={row.color ? projectColorValue(row.color) : NEUTRAL_BAR}
                 />
               ))}
             </div>
@@ -220,7 +220,7 @@ export function PeriodReportSection({ tasks, projects, today }: { tasks: readonl
           </div>
         </ChartBlock>
 
-        <ChartBlock title="Aguardando resposta de quem" description="Quem tem mais tarefas suas paradas.">
+        <ChartBlock title="Quem mais deve resposta" description="Pessoas com mais tarefas suas aguardando.">
           {health.people.length === 0 ? (
             <p className="text-compact text-ink-muted">Ninguém com resposta pendente.</p>
           ) : (

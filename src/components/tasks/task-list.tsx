@@ -2,7 +2,7 @@
 
 import type { Project } from "@/domain/project";
 import type { Task } from "@/domain/task";
-import { DATE_GROUP_LABELS, groupByDate } from "@/domain/task-queries";
+import { DATE_GROUP_LABELS, groupByDate, isArchived } from "@/domain/task-queries";
 
 import { TaskRow } from "./task-row";
 
@@ -13,9 +13,12 @@ interface TaskListProps {
   grouped?: boolean;
   showProject?: boolean;
   label?: string;
+  /** Modo de seleção: tarefas arquivadas são só leitura e ficam de fora. */
+  selectedIds?: ReadonlySet<string>;
+  onToggleSelect?: (id: string) => void;
 }
 
-function Rows({ tasks, projectsById, today, showProject, label }: Omit<TaskListProps, "grouped">) {
+function Rows({ tasks, projectsById, today, showProject, label, selectedIds, onToggleSelect }: Omit<TaskListProps, "grouped">) {
   return (
     <ul aria-label={label} className="flex flex-col gap-px">
       {tasks.map((task) => (
@@ -25,6 +28,8 @@ function Rows({ tasks, projectsById, today, showProject, label }: Omit<TaskListP
           project={task.projectId ? projectsById.get(task.projectId) : undefined}
           today={today}
           showProject={showProject}
+          selected={selectedIds?.has(task.id)}
+          onToggleSelect={isArchived(task) ? undefined : onToggleSelect}
         />
       ))}
     </ul>
@@ -32,9 +37,10 @@ function Rows({ tasks, projectsById, today, showProject, label }: Omit<TaskListP
 }
 
 /** Lista de tarefas, opcionalmente agrupada em Hoje / Próximas / Sem data (PRD §26). */
-export function TaskList({ tasks, projectsById, today, grouped = false, showProject = true, label }: TaskListProps) {
+export function TaskList({ tasks, projectsById, today, grouped = false, showProject = true, label, selectedIds, onToggleSelect }: TaskListProps) {
+  const selection = { selectedIds, onToggleSelect };
   if (!grouped) {
-    return <Rows tasks={tasks} projectsById={projectsById} today={today} showProject={showProject} label={label} />;
+    return <Rows tasks={tasks} projectsById={projectsById} today={today} showProject={showProject} label={label} {...selection} />;
   }
 
   return (
@@ -51,6 +57,7 @@ export function TaskList({ tasks, projectsById, today, grouped = false, showProj
             today={today}
             showProject={showProject}
             label={DATE_GROUP_LABELS[group]}
+            {...selection}
           />
         </section>
       ))}

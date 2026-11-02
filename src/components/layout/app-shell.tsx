@@ -14,6 +14,7 @@ import { useReviewReminder } from "@/hooks/use-review-reminder";
 import { isSupabaseConfigured } from "@/lib/supabase/client";
 import { useUiStore } from "@/store/ui-store";
 
+import { CommandPalette } from "./command-palette";
 import { MobileNav } from "./mobile-nav";
 import { Sidebar } from "./sidebar";
 
@@ -68,6 +69,7 @@ function AuthenticatedShell({ userId, children }: { userId: string; children: Re
       </div>
       <MobileNav className="lg:hidden" />
       <QuickCreateDialog />
+      <CommandPalette />
       <Toaster />
     </>
   );

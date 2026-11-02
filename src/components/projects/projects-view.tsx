@@ -7,7 +7,7 @@ import { useMemo } from "react";
 import { PageContainer, PageHeader } from "@/components/layout/page";
 import { Button } from "@/components/ui/button";
 import { EmptyState, ProgressBar } from "@/components/ui/misc";
-import { PROJECT_COLOR } from "@/components/ui/tokens";
+import { projectColorValue } from "@/components/ui/tokens";
 import type { Project } from "@/domain/project";
 import { recentProjects, type ProjectStats } from "@/domain/task-queries";
 import { cn } from "@/lib/utils/cn";
@@ -41,7 +41,7 @@ export function ProjectRow({ project, stats, compact }: { project: Project; stat
         <span
           aria-hidden="true"
           className="absolute top-3 bottom-3 left-1.5 w-1 rounded-full"
-          style={{ backgroundColor: PROJECT_COLOR[project.color] }}
+          style={{ backgroundColor: projectColorValue(project.color) }}
         />
         <span className="flex min-w-0 flex-1 flex-col gap-1">
           <span className="truncate text-body font-medium text-ink">{project.name}</span>
@@ -53,7 +53,7 @@ export function ProjectRow({ project, stats, compact }: { project: Project; stat
         {!compact && stats.total > 0 && (
           <span className="hidden w-28 shrink-0 flex-col items-end gap-1.5 sm:flex">
             <span className="text-meta text-ink-subtle tabular-nums">{percent}%</span>
-            <ProgressBar percent={percent} className="w-full" color={PROJECT_COLOR[project.color]} />
+            <ProgressBar percent={percent} className="w-full" color={projectColorValue(project.color)} />
           </span>
         )}
       </Link>

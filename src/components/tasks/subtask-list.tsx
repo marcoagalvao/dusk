@@ -3,6 +3,7 @@
 import { Check, Plus, X } from "lucide-react";
 import { useId, useRef, useState, type KeyboardEvent } from "react";
 
+import { toggleSubtask } from "@/actions/task-actions";
 import { ProgressBar } from "@/components/ui/misc";
 import type { Subtask, Task } from "@/domain/task";
 import { subtaskProgress } from "@/domain/task-rules";
@@ -80,7 +81,6 @@ export function SubtaskList({ task }: { task: Task }) {
 }
 
 function SubtaskItem({ taskId, subtask, readOnly }: { taskId: string; subtask: Subtask; readOnly: boolean }) {
-  const toggleSubtask = useAppStore((state) => state.toggleSubtask);
   const renameSubtask = useAppStore((state) => state.renameSubtask);
   const removeSubtask = useAppStore((state) => state.removeSubtask);
   const [editing, setEditing] = useState(false);

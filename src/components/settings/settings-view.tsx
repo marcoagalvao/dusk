@@ -21,6 +21,7 @@ import { useSettings } from "@/store/hooks";
 import { toast } from "@/store/ui-store";
 
 import { BackupSection } from "./backup-section";
+import { NotificationsRow } from "./notifications-row";
 import { SettingsRow, SettingsSection } from "./settings-layout";
 
 const ERASE_CONFIRMATION = "APAGAR";
@@ -67,11 +68,15 @@ export function SettingsView() {
                 onChange={(defaultTaskView) => updateSettings({ defaultTaskView })}
                 options={[
                   { value: "list", label: "Lista", icon: <LayoutList aria-hidden="true" className="size-4" /> },
-                  { value: "kanban", label: "Kanban", icon: <Columns3 aria-hidden="true" className="size-4" /> },
+                  { value: "kanban", label: "Quadro", icon: <Columns3 aria-hidden="true" className="size-4" /> },
                 ]}
               />
             }
           />
+        </SettingsSection>
+
+        <SettingsSection id="settings-notifications" title="Avisos">
+          <NotificationsRow />
         </SettingsSection>
 
         <SettingsSection id="settings-data" title="Dados">

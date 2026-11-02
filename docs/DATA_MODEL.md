@@ -18,20 +18,21 @@ Definido em `src/domain/task.ts`, `project.ts`, `settings.ts` e `app-data.ts`.
 | --- | --- | --- |
 | `id` | string | Gerado no cliente por `createId()` |
 | `title` | string | Obrigatório |
-| `status` | `todo`, `in_progress`, `waiting`, `blocked`, `completed` | A fazer, Em andamento, Aguardando, Bloqueado, Concluído |
+| `status` | `todo`, `in_progress`, `waiting`, `blocked`, `completed` | A fazer, Em andamento, Aguardando, Bloqueada, Concluída |
 | `priority` | `urgent`, `high`, `normal`, `low` | Urgente, Alta, Normal, Baixa |
 | `projectId` | string opcional | |
 | `dueDate` | `YYYY-MM-DD` opcional | Prazo: quando precisa estar pronto |
-| `reviewDate` | `YYYY-MM-DD` opcional | Revisão: quando voltar a olhar. Vale também para concluídas (acompanhamento) |
+| `reviewDate` | `YYYY-MM-DD` opcional | Lembrete: quando voltar a olhar. Vale também para concluídas. A coluna mantém o nome antigo para não exigir migração de dados |
 | `focusDate` | `YYYY-MM-DD` opcional | No foco só nesse dia, expira sozinho |
-| `lastDone`, `waitingFor`, `nextAction`, `note` | string opcional | Contexto atual |
+| `recurrence` | `daily`, `weekdays`, `weekly`, `monthly` opcional | Repetir. Sai da tarefa ao concluir e passa para a próxima da série |
+| `lastDone`, `waitingFor`, `nextAction`, `note` | string opcional | Contexto atual. `nextAction` aparece como Próximo passo; `waitingFor`, como Aguardando ou Bloqueada por, e é limpo ao sair desses status |
 | `subtasks` | `Subtask[]` | `id`, `title`, `completed`, `createdAt`, `completedAt?` |
 | `updates` | `TaskUpdate[]` | Histórico imutável |
 | `createdAt`, `updatedAt`, `completedAt?`, `archivedAt?` | ISO | Instantes |
 
 **TaskUpdate:** `id`, `taskId`, `type` (`progress`, `status_change`, `completed`, `reopened`), `preset?`, `status`, `done?`, `waitingFor?`, `nextAction?`, `note?`, `reviewDate?`, `createdAt`.
 
-**Project:** `id`, `name` (até 60 caracteres), `color` (`lavender`, `periwinkle`, `peach`, `rose`, `sage`, `sand`), `description?`, `archivedAt?`, `createdAt`, `updatedAt`.
+**Project:** `id`, `name` (até 60 caracteres), `color` (`lavender`, `periwinkle`, `peach`, `rose`, `sage`, `sand` ou uma cor livre em `#rrggbb` minúsculo), `description?`, `archivedAt?`, `createdAt`, `updatedAt`.
 
 **AppSettings:** `theme`, `defaultTaskView` (`list` ou `kanban`), `sidebarCollapsed`, `displayName?`.
 
@@ -46,6 +47,7 @@ Supabase, projeto **Dusk** (ref `ylkyznsaribnccdfbpkd`). O schema está em `supa
 | `subtasks` | `(user_id, id)` | `task_id` → `tasks`, cascade. `position` guarda a ordem |
 | `task_updates` | `(user_id, id)` | `task_id` → `tasks`, cascade. `position` guarda a ordem |
 | `user_settings` | `user_id` | Uma linha por usuário |
+| `push_subscriptions` | `(user_id, endpoint)` | Um registro por aparelho com avisos ligados: `p256dh`, `auth`, `time_zone`. Não faz parte do `AppData`, do backup nem da fila |
 
 - Os ids são texto porque nascem no cliente, o que permite criar itens sem conexão. Por isso a chave inclui `user_id`.
 - Toda tabela referencia `auth.users` com `on delete cascade`.
@@ -56,7 +58,7 @@ Supabase, projeto **Dusk** (ref `ylkyznsaribnccdfbpkd`). O schema está em `supa
 
 - RLS ligado em todas as tabelas, com uma política `<tabela>_own_rows` para `authenticated`: `auth.uid() = user_id` em leitura e escrita.
 - `anon` não tem nenhuma permissão.
-- O cliente usa só a chave publishable. A chave secret nunca entra no projeto.
+- O cliente usa só a chave publishable. A chave secret fica só na variável `SUPABASE_SERVICE_ROLE_KEY` do servidor, lida pela rota do resumo diário, e nunca é versionada.
 
 ## Chaves no navegador
 
@@ -82,6 +84,8 @@ A sessão do Supabase Auth também fica no `localStorage`, gerenciada pela bibli
 Migrations aplicadas:
 
 - `0001_initial_schema.sql`
+- `0002_project_custom_color.sql`
+- `0003_recurrence_and_push.sql`
 
 Para mudar o banco:
 
@@ -90,4 +94,4 @@ Para mudar o banco:
 3. Atualize o tipo em `src/domain`, o mapeamento em `rows.ts` e o schema zod.
 4. Se o formato do JSON mudar, incremente `SCHEMA_VERSION` e registre em `migrations.ts`.
 5. Atualize a lista acima, as tabelas deste documento e o `CHANGELOG.md`.
-6. Rode `npm test`: o teste de colunas lê a migration `0001`. Ao adicionar colunas por `alter table`, estenda o teste para considerar as novas migrations.
+6. Rode `npm test`: o teste de colunas soma todas as migrations, inclusive `alter table ... add column`. Tabelas fora do `AppData`, como `push_subscriptions`, ficam de fora dessa comparação.
