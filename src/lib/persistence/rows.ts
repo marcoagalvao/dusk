@@ -88,6 +88,7 @@ export function stateToRows(data: AppData): RowSet {
       waiting_for: task.waitingFor ?? null,
       next_action: task.nextAction ?? null,
       note: task.note ?? null,
+      recurrence: task.recurrence ?? null,
       created_at: task.createdAt,
       updated_at: task.updatedAt,
       completed_at: task.completedAt ?? null,
@@ -152,6 +153,7 @@ export function rowsToState(rows: RowSet): unknown {
       waitingFor: optional(row.waiting_for),
       nextAction: optional(row.next_action),
       note: optional(row.note),
+      recurrence: optional(row.recurrence),
       subtasks: (subtasksByTask.get(String(row.id)) ?? []).map((subtask) => ({
         id: subtask.id,
         title: subtask.title,

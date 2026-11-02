@@ -25,6 +25,7 @@ import { useToday } from "@/hooks/use-clock";
 import { useProject, useProjectMap, useTasks } from "@/store/hooks";
 import { useUiStore } from "@/store/ui-store";
 
+import { ProjectArchiveDialog } from "./project-archive-dialog";
 import { ProjectDeleteDialog } from "./project-delete-dialog";
 import { ProjectFormDialog } from "./project-form-dialog";
 import { ProjectSummaryLine } from "./projects-view";
@@ -60,10 +61,12 @@ function ProjectDetail({ project, onDeleted }: { project: Project; onDeleted: ()
   const openQuickCreate = useUiStore((state) => state.openQuickCreate);
   const [editOpen, setEditOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
+  const [archiveOpen, setArchiveOpen] = useState(false);
   const [showAllCompleted, setShowAllCompleted] = useState(false);
   const archived = Boolean(project.archivedAt);
 
   const stats = useMemo(() => projectStats(project, tasks), [project, tasks]);
+  const activeTaskCount = tasks.filter((task) => task.projectId === project.id && !isArchived(task)).length;
   const sections = useMemo(() => {
     const own = tasks.filter((task) => task.projectId === project.id && !isArchived(task));
     return STATUS_SECTIONS.map((status) => {
@@ -119,6 +122,10 @@ function ProjectDetail({ project, onDeleted }: { project: Project; onDeleted: ()
                 ) : (
                   <DropdownMenuItem
                     onSelect={() => {
+                      if (activeTaskCount > 0) {
+                        setArchiveOpen(true);
+                        return;
+                      }
                       archiveProject(project.id);
                       router.push("/projects");
                     }}
@@ -191,6 +198,13 @@ function ProjectDetail({ project, onDeleted }: { project: Project; onDeleted: ()
       )}
 
       <ProjectFormDialog project={project} open={editOpen} onOpenChange={setEditOpen} />
+      <ProjectArchiveDialog
+        project={project}
+        activeTaskCount={activeTaskCount}
+        open={archiveOpen}
+        onOpenChange={setArchiveOpen}
+        onArchived={() => router.push("/projects")}
+      />
       <ProjectDeleteDialog
         project={project}
         open={deleteOpen}

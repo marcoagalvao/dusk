@@ -1,9 +1,9 @@
 "use client";
 
-import { Columns3, LayoutList, Plus } from "lucide-react";
+import { CheckSquare, Columns3, LayoutList, Plus } from "lucide-react";
 import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
-import { useMemo } from "react";
+import { useCallback, useMemo, useState } from "react";
 
 import { PageContainer, PageHeader } from "@/components/layout/page";
 import { Button } from "@/components/ui/button";
@@ -25,6 +25,7 @@ import { useAppStore } from "@/store/app-store";
 import { useProjectMap, useSettings, useTasks } from "@/store/hooks";
 import { useUiStore } from "@/store/ui-store";
 
+import { BulkActionBar } from "./bulk-action-bar";
 import { TaskList } from "./task-list";
 import { TaskToolbar } from "./task-toolbar";
 
@@ -41,12 +42,12 @@ const SCOPES: Record<TaskScope, { title: string; emptyTitle: string; emptyDescri
   today: {
     title: "Hoje",
     emptyTitle: "Nada marcado para hoje.",
-    emptyDescription: "Aqui aparecem o foco do dia, prazos de hoje ou vencidos e revisões que chegaram.",
+    emptyDescription: "Aqui aparecem o foco do dia, prazos de hoje ou vencidos e lembretes que chegaram.",
   },
   upcoming: {
     title: "Próximas",
     emptyTitle: "Nada agendado para os próximos dias.",
-    emptyDescription: "Tarefas com prazo ou revisão no futuro aparecem aqui, da mais próxima para a mais distante.",
+    emptyDescription: "Tarefas com prazo ou lembrete no futuro aparecem aqui, da mais próxima para a mais distante.",
   },
   waiting: {
     title: "Aguardando",
@@ -62,7 +63,7 @@ const SCOPES: Record<TaskScope, { title: string; emptyTitle: string; emptyDescri
 
 const VIEW_OPTIONS = [
   { value: "list", label: "Lista", icon: <LayoutList aria-hidden="true" className="size-4" /> },
-  { value: "kanban", label: "Kanban", icon: <Columns3 aria-hidden="true" className="size-4" /> },
+  { value: "kanban", label: "Quadro", icon: <Columns3 aria-hidden="true" className="size-4" /> },
 ] as const;
 
 export function TasksView({ scope, viewOverride }: { scope: TaskScope; viewOverride?: TaskView }) {
@@ -77,6 +78,21 @@ export function TasksView({ scope, viewOverride }: { scope: TaskScope; viewOverr
   const resetFilters = useUiStore((state) => state.resetTaskFilters);
   const setFilters = useUiStore((state) => state.setTaskFilters);
   const openQuickCreate = useUiStore((state) => state.openQuickCreate);
+  const [selecting, setSelecting] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<ReadonlySet<string>>(new Set());
+
+  const toggleSelected = useCallback((id: string) => {
+    setSelectedIds((current) => {
+      const next = new Set(current);
+      if (!next.delete(id)) next.add(id);
+      return next;
+    });
+  }, []);
+
+  const stopSelecting = () => {
+    setSelecting(false);
+    setSelectedIds(new Set());
+  };
 
   const config = SCOPES[scope];
   const view: TaskView = scope === "all" ? (viewOverride ?? settings.defaultTaskView) : "list";
@@ -92,6 +108,10 @@ export function TasksView({ scope, viewOverride }: { scope: TaskScope; viewOverr
 
   const hasAnyTask = tasks.some((task) => !isArchived(task));
   const isFiltering = countActiveFilters(filters) > 0 || filters.search.trim().length > 0;
+  // Só vale o que está na tela: um filtro novo não age sobre tarefas escondidas.
+  const selectable = visible.filter((task) => !isArchived(task));
+  const selectedVisible = selectable.filter((task) => selectedIds.has(task.id)).map((task) => task.id);
+  const showSelection = selecting && view === "list" && selectable.length > 0;
 
   return (
     <PageContainer width={view === "kanban" ? "wide" : "default"}>
@@ -100,6 +120,12 @@ export function TasksView({ scope, viewOverride }: { scope: TaskScope; viewOverr
         description={hasAnyTask ? pluralize(visible.length, "tarefa", "tarefas") : undefined}
         actions={
           <>
+            {view === "list" && selectable.length > 0 && !showSelection && (
+              <Button onClick={() => setSelecting(true)}>
+                <CheckSquare aria-hidden="true" className="size-4" />
+                Selecionar
+              </Button>
+            )}
             {scope === "all" && (
               <SegmentedControl<TaskView>
                 label="Visualização"
@@ -165,6 +191,19 @@ export function TasksView({ scope, viewOverride }: { scope: TaskScope; viewOverr
           today={today}
           grouped={scope === "all" && sort === "smart"}
           label={config.title}
+          selectedIds={showSelection ? selectedIds : undefined}
+          onToggleSelect={showSelection ? toggleSelected : undefined}
+        />
+      )}
+
+      {showSelection && (
+        <BulkActionBar
+          selectedIds={selectedVisible}
+          selectableCount={selectable.length}
+          today={today}
+          onSelectAll={() => setSelectedIds(new Set(selectable.map((task) => task.id)))}
+          onCancel={stopSelecting}
+          onDone={stopSelecting}
         />
       )}
     </PageContainer>

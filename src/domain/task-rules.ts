@@ -2,7 +2,7 @@ import { isValidDateKey } from "@/lib/dates";
 import { createId } from "@/lib/utils/id";
 import { cleanText } from "@/lib/utils/text";
 
-import type { Subtask, Task, TaskPriority, TaskStatus, TaskUpdate } from "./task";
+import { STATUSES_WITH_WAITING, type Subtask, type Task, type TaskPriority, type TaskRecurrence, type TaskStatus, type TaskUpdate } from "./task";
 
 /**
  * Regras de negócio de tarefas como funções puras: recebem a tarefa atual e o
@@ -16,6 +16,7 @@ export interface CreateTaskInput {
   focusDate?: string;
   priority?: TaskPriority;
   reviewDate?: string;
+  recurrence?: TaskRecurrence;
 }
 
 export function buildTask(input: CreateTaskInput, now: string): Task {
@@ -31,6 +32,7 @@ export function buildTask(input: CreateTaskInput, now: string): Task {
     dueDate: validDateOrUndefined(input.dueDate),
     reviewDate: validDateOrUndefined(input.reviewDate),
     focusDate: validDateOrUndefined(input.focusDate),
+    recurrence: input.recurrence,
     subtasks: [],
     updates: [],
     createdAt: now,
@@ -56,19 +58,37 @@ function transitionType(from: TaskStatus, to: TaskStatus): TaskUpdate["type"] {
   return "status_change";
 }
 
+const isWaitingStatus = (status: TaskStatus) => STATUSES_WITH_WAITING.includes(status);
+
+/** A tarefa deixa de depender de algo externo (Aguardando e Bloqueada são os dois lados da mesma espera). */
+export const leavesWaiting = (from: TaskStatus, to: TaskStatus) => isWaitingStatus(from) && !isWaitingStatus(to);
+
 /**
  * Troca o status registrando o evento correspondente na timeline.
- * Concluir define `completedAt`; sair de Concluído o limpa (evento `reopened`).
+ * Concluir define `completedAt`; sair de Concluída o limpa (evento `reopened`).
+ * Sair da espera encerra a pessoa e o lembrete, que serviam para cobrar: quem
+ * era fica no histórico.
  */
 export function changeStatus(task: Task, status: TaskStatus, now: string): Task {
   if (task.status === status) return task;
 
-  const update = buildUpdate(task, { type: transitionType(task.status, status), status }, now);
+  const closesWaiting = leavesWaiting(task.status, status);
+  const update = buildUpdate(
+    task,
+    {
+      type: transitionType(task.status, status),
+      status,
+      note: closesWaiting && task.waitingFor ? `Deixou de aguardar: ${task.waitingFor}` : undefined,
+    },
+    now,
+  );
 
   return {
     ...task,
     status,
     completedAt: status === "completed" ? now : undefined,
+    waitingFor: closesWaiting ? undefined : task.waitingFor,
+    reviewDate: closesWaiting ? undefined : task.reviewDate,
     updatedAt: now,
     updates: [...task.updates, update],
   };
@@ -78,8 +98,13 @@ export function completeTask(task: Task, now: string): Task {
   return changeStatus(task, "completed", now);
 }
 
+/**
+ * Quem já tinha começado volta para Em andamento: a espera, se havia, foi
+ * encerrada ao concluir. Só a tarefa nunca iniciada volta para A fazer.
+ */
 export function reopenTask(task: Task, now: string): Task {
-  return changeStatus(task, "todo", now);
+  const before = task.updates.findLast((update) => update.status !== "completed")?.status ?? "todo";
+  return changeStatus(task, before === "todo" ? "todo" : "in_progress", now);
 }
 
 export interface ProgressInput {
@@ -95,7 +120,7 @@ export interface ProgressInput {
 function normalizeProgress(input: ProgressInput) {
   return {
     done: cleanText(input.done),
-    waitingFor: cleanText(input.waitingFor),
+    waitingFor: isWaitingStatus(input.status) ? cleanText(input.waitingFor) : undefined,
     nextAction: cleanText(input.nextAction),
     reviewDate: validDateOrUndefined(input.reviewDate),
     note: cleanText(input.note),
@@ -173,6 +198,7 @@ export interface TaskPatch {
   waitingFor?: string | null;
   nextAction?: string | null;
   note?: string | null;
+  recurrence?: TaskRecurrence | null;
 }
 
 const TEXT_FIELDS = ["lastDone", "waitingFor", "nextAction", "note"] as const;
@@ -189,6 +215,9 @@ export function patchTask(task: Task, patch: TaskPatch, now: string): Task {
   }
   if (patch.priority && patch.priority !== task.priority) {
     fields.priority = patch.priority;
+  }
+  if (patch.recurrence !== undefined && (patch.recurrence ?? undefined) !== task.recurrence) {
+    fields.recurrence = patch.recurrence ?? undefined;
   }
   if (patch.projectId !== undefined) {
     const projectId = patch.projectId || undefined;

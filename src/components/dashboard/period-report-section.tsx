@@ -220,7 +220,7 @@ export function PeriodReportSection({ tasks, projects, today }: { tasks: readonl
           </div>
         </ChartBlock>
 
-        <ChartBlock title="Aguardando resposta de quem" description="Quem tem mais tarefas suas paradas.">
+        <ChartBlock title="Quem mais deve resposta" description="Pessoas com mais tarefas suas aguardando.">
           {health.people.length === 0 ? (
             <p className="text-compact text-ink-muted">Ninguém com resposta pendente.</p>
           ) : (

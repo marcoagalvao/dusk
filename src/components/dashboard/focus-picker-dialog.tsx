@@ -25,11 +25,11 @@ export function FocusPickerDialog({ open, onOpenChange, today }: FocusPickerDial
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent placement="top" width="lg">
-        <DialogHeader title="Foco de hoje" description="Escolha o que realmente precisa avançar hoje." />
+        <DialogHeader title="Foco de hoje" description="Foco é o que você escolhe fazer hoje. Vale só para hoje." />
         <FocusPicker today={today} />
         <DialogFooter>
           <Button variant="primary" onClick={() => onOpenChange(false)}>
-            Concluir seleção
+            Pronto
           </Button>
         </DialogFooter>
       </DialogContent>

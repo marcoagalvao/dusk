@@ -130,7 +130,7 @@ Comportamento consistente sem colocar regra de UI dentro do store nem duplicar t
 §61 exige que status não seja comunicado só por cor; §31 pede conclusão em um clique.
 
 **Escolha:**
-`StatusGlyph`: anel (A fazer), meio preenchido (Em andamento), anel tracejado (Aguardando), anel cortado (Bloqueado), disco com check (Concluído). O mesmo glifo é o botão de concluir nas listas.
+`StatusGlyph`: anel (A fazer), meio preenchido (Em andamento), anel tracejado (Aguardando), anel cortado (Bloqueada), disco com check (Concluída). O mesmo glifo é o botão de concluir nas listas.
 
 **Motivo:**
 Identidade visual própria e acessível, alinhada ao conceito "Dusk" (fases), sem precisar de um checkbox separado.
@@ -138,10 +138,10 @@ Identidade visual própria e acessível, alinhada ao conceito "Dusk" (fases), se
 ## Campo "Aguardando" condicionado ao status
 
 **Contexto:**
-`waitingFor` só faz sentido em Aguardando/Bloqueado, mas apagar dados implicitamente surpreende.
+`waitingFor` só faz sentido em Aguardando/Bloqueada. A primeira versão mantinha o valor ao sair desses status, para não apagar dados sem aviso. No uso, isso deixava pessoa e lembrete antigos valendo em tarefas já resolvidas.
 
-**Escolha:**
-No modal de andamento o campo só aparece para Aguardando ("Aguardando") e Bloqueado ("Bloqueado por"). Se o status escolhido for outro, o valor atual é mantido, não apagado. O detalhe só mostra a seção quando o status é Aguardando/Bloqueado. Limpar é explícito (preset "Resposta recebida" ou editar o campo).
+**Escolha (revista na 1.3):**
+Sair de Aguardando/Bloqueada encerra `waitingFor` e o `reviewDate` da espera. Nada se perde sem aviso: o histórico registra "Deixou de aguardar: X" e o toast oferece Desfazer. Concluir segue a mesma regra. O campo só aparece com o status certo, com o rótulo "Aguardando" ou "Bloqueada por". Trocar entre Aguardando e Bloqueada mantém os dados, porque a espera continua.
 
 ## Observação do andamento fica só no histórico
 
@@ -181,10 +181,10 @@ Se um status específico for escolhido, o filtro de situação é ignorado (esco
 **Motivo:**
 Evita combinações sem resultado que parecem bug.
 
-## Agrupamento só na ordenação inteligente
+## Agrupamento só na ordenação Recomendada
 
 **Escolha:**
-`/tasks` agrupa em Hoje / Próximas / Sem data apenas com a ordenação "Inteligente". Outras ordenações mostram lista plana.
+`/tasks` agrupa em Hoje / Próximas / Sem data apenas com a ordenação "Recomendada". Outras ordenações mostram lista plana.
 
 **Motivo:**
 Agrupar por data e ordenar alfabeticamente ao mesmo tempo produz uma lista difícil de ler.
@@ -216,13 +216,13 @@ No iOS o teclado virtual cobre elementos fixos na base e fontes menores que 16px
 **Motivo:**
 `randomUUID` só existe em contexto seguro; abrir o dev server pelo IP da rede (http) no celular quebraria a criação de tarefas.
 
-## Kanban: sensores e coluna Concluído
+## Quadro: sensores e coluna Concluída
 
 **Contexto:**
-§27 pede dnd-kit com mouse e touch; §61 pede alternativa acessível; a coluna Concluído cresceria sem limite.
+§27 pede dnd-kit com mouse e touch; §61 pede alternativa acessível; a coluna Concluída cresceria sem limite.
 
 **Escolha:**
-`MouseSensor` (distância de 6 px, para o clique abrir a tarefa), `TouchSensor` (atraso de 220 ms, para não brigar com a rolagem horizontal das colunas) e `KeyboardSensor` com um `coordinateGetter` em que ←/→ saltam de coluna. A coluna Concluído mostra só o que terminou nos últimos 7 dias; o restante continua na lista com o filtro de concluídas. Ordem dentro da coluna não é persistida (o PRD não define ordenação manual).
+`MouseSensor` (distância de 6 px, para o clique abrir a tarefa), `TouchSensor` (atraso de 220 ms, para não brigar com a rolagem horizontal das colunas) e `KeyboardSensor` com um `coordinateGetter` em que ←/→ saltam de coluna. A coluna Concluída mostra só o que terminou nos últimos 7 dias; o restante continua na lista com o filtro de concluídas. Ordem dentro da coluna não é persistida (o PRD não define ordenação manual).
 
 **Alternativas consideradas:**
 `PointerSensor` único (conflita com scroll no toque); `@dnd-kit/sortable` (desnecessário sem ordenação manual).
@@ -366,13 +366,13 @@ São formas simples, e uma biblioteca aumentaria o bundle e exigiria sobrescreve
 **Alternativas consideradas:**
 Recharts ou Chart.js (peso e estilo difícil de alinhar ao tema).
 
-## "Para fazer hoje" reúne foco e atenção
+## "Hoje" reúne foco e atenção
 
 **Contexto:**
 A Home tinha seções separadas de foco, atenção e resumo. O número do resumo não batia com a lista.
 
 **Escolha:**
-A lista se divide em "Para fazer hoje", com o mesmo recorte de `/tasks/today` e do número grande, e "Também pedem atenção", com o restante de `getTodayAgenda`.
+A lista se divide em "Hoje", com o mesmo recorte de `/tasks/today` e do número grande, e "Outras que pedem atenção", com o restante de `getTodayAgenda`. As duas mostram só tarefas abertas; o que foi concluído hoje aparece no contador "Concluídas hoje".
 
 **Motivo:**
 O número em destaque precisa coincidir com o que está na lista logo ao lado.
@@ -384,3 +384,48 @@ Semana, Quinzena e Mês são os últimos 7, 15 e 30 dias, comparados aos N dias 
 
 **Motivo:**
 Um período de calendário fica quase vazio no começo e distorce a comparação. Períodos móveis sempre comparam a mesma quantidade de dias.
+
+## Vocabulário: Lembrete, Quadro e o feminino dos status
+
+**Contexto:**
+A mesma coisa tinha vários nomes: Revisão, Revisar novamente, Para revisar, Acompanhamento. Kanban é jargão, e Bloqueado e Concluído destoavam de "tarefa".
+
+**Escolha:**
+Uma palavra para cada conceito, na interface inteira e na página Como funciona. Os nomes internos (`reviewDate`, `nextAction`, `kanban`, a coluna `review_date`) continuam, porque renomeá-los exigiria migração de dados sem nenhum ganho para o usuário. As seções mais antigas deste documento citam os nomes da época em que a decisão foi tomada.
+
+## Recorrência cria a próxima ao concluir
+
+**Contexto:**
+Tarefa que repete pode gerar ocorrências antecipadas ou nascer quando a anterior termina.
+
+**Escolha:**
+A próxima nasce ao concluir (`buildNextOccurrence`), a partir do prazo e não da data de conclusão. Prazo muito atrasado salta para a primeira data depois de hoje. A tarefa concluída perde `recurrence`, então reabrir e concluir de novo não duplica a série. A regra fica no `updateTask` do store, por onde passam todas as formas de concluir.
+
+**Motivo:**
+Uma lista cheia de ocorrências futuras esconderia o que importa, e voltar de férias não pode significar dezenas de tarefas vencidas. Fora de escopo por enquanto: dias específicos da semana e data final da série.
+
+## Ordem Recomendada
+
+**Escolha:**
+Atrasadas, prazo de hoje, lembretes que chegaram, urgentes, prazos em até 7 dias e o resto, com a prioridade decidindo dentro de cada grupo. Antes, uma tarefa sem data e com prioridade Normal podia ficar acima de uma com prazo em dois dias, e o nome "Inteligente" não dizia o que a ordem fazia.
+
+## Arquivar projeto pergunta sobre as tarefas
+
+**Escolha:**
+Com tarefas ativas, o padrão é arquivar junto, com o mesmo instante em `archivedAt`. Restaurar traz de volta só as tarefas com esse instante exato, então uma tarefa arquivada antes, por conta própria, continua no Arquivo. Nenhuma coluna nova foi necessária.
+
+## Chave secreta do Supabase só na rota do resumo
+
+**Contexto:**
+O app não tinha servidor, e a regra era não ter chave secret. Avisos com o app fechado precisam que algo leia os dados sem um usuário logado.
+
+**Escolha:**
+Uma única rota, `/api/cron/reminders`, protegida por `CRON_SECRET`, usa a chave secreta em variável de servidor. Ela lê só status e datas das tarefas, e o texto da notificação traz contagens, sem títulos, para nada do conteúdo passar pelo serviço de push do navegador. A assinatura do aparelho é gravada direto, fora do `AppData` e da fila, porque não faz sentido em backup nem sem conexão.
+
+**Descartado:**
+Supabase Edge Functions (mais uma plataforma para implantar) e notificações locais (não disparam com o app fechado).
+
+## Selecionar age só sobre o que está na tela
+
+**Escolha:**
+A seleção guarda ids, mas as ações usam a interseção com as tarefas visíveis. Filtrar depois de selecionar não permite arquivar ou concluir algo que o usuário não está vendo. Tarefas arquivadas, que só aparecem em recortes do relatório, não podem ser selecionadas.

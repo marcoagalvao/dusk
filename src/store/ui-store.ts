@@ -38,6 +38,9 @@ interface UiStore {
   showToast: (toast: Omit<Toast, "id" | "tone" | "duration"> & Partial<Pick<Toast, "tone" | "duration">>) => string;
   dismissToast: (id: string) => void;
 
+  commandOpen: boolean;
+  setCommandOpen: (commandOpen: boolean) => void;
+
   quickCreate: { open: boolean; defaults: QuickCreateDefaults };
   openQuickCreate: (defaults?: QuickCreateDefaults) => void;
   closeQuickCreate: () => void;
@@ -53,7 +56,7 @@ interface UiStore {
   lastListPath: string;
   setLastListPath: (path: string) => void;
 
-  /** Dia em que o aviso de revisões já foi avaliado nesta sessão. */
+  /** Dia em que o aviso de lembretes já foi avaliado nesta sessão. */
   reviewReminderDate: string | null;
   markReviewReminder: (date: string) => void;
 }
@@ -79,6 +82,9 @@ export const useUiStore = create<UiStore>()((set) => ({
     return id;
   },
   dismissToast: (id) => set((state) => ({ toasts: state.toasts.filter((toast) => toast.id !== id) })),
+
+  commandOpen: false,
+  setCommandOpen: (commandOpen) => set({ commandOpen }),
 
   quickCreate: { open: false, defaults: {} },
   // Antes do primeiro carregamento nada pode ser salvo: a tarefa criada se perderia.

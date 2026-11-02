@@ -4,6 +4,41 @@ Todas as mudanças relevantes do Dusk, da mais recente para a mais antiga. Forma
 
 Toda mudança entra aqui na mesma entrega, com a data. As regras estão em [`AGENTS.md`](AGENTS.md).
 
+## [1.3.0] - 2026-11-02
+
+Revisão de usabilidade: as regras ficaram previsíveis, as palavras ficaram iguais em todas as telas e o que faltava para o uso diário entrou. Requer a migration `0003_recurrence_and_push.sql` no Supabase antes do deploy: sem ela, o banco recusa as tarefas salvas pela nova versão.
+
+### Adicionado
+- Tarefas recorrentes: todo dia, dias úteis, toda semana ou todo mês. Ao concluir, a próxima é criada com o novo prazo, e o Desfazer desfaz as duas coisas.
+- Avisos neste aparelho: um resumo pela manhã com atrasadas, prazos de hoje e lembretes, mesmo com o app fechado. Precisa das variáveis novas de `.env.example`.
+- Busca global com `Ctrl+K` ou pelo botão Buscar: tarefas, projetos e telas.
+- Selecionar várias tarefas na lista para concluir, mudar prioridade ou projeto, colocar no foco e arquivar, com Desfazer.
+- "Mover para" nos cartões do quadro, no celular.
+- "Criar e adicionar outra" na criação rápida, que também passou a usar os atalhos de data e a explicar Prazo e Lembrete.
+- Página "Como funciona", que explica cada palavra do app.
+- Aviso quando tarefas do foco de ontem ficaram por fazer, com "Trazer para hoje" e "Dispensar".
+- Botão Editar visível na tarefa, e explicação de cada status na hora de escolher.
+
+### Corrigido
+- Sair de Aguardando ou Bloqueada encerra a pessoa e o lembrete dessa espera, e o histórico registra de quem você deixou de aguardar. Antes, um aviso antigo continuava aparecendo em tarefas já resolvidas.
+- Concluir avisa quando há subtarefas abertas, quando a espera foi encerrada e quando um lembrete continua marcado.
+- Reabrir volta para Em andamento quando a tarefa já tinha andado, em vez de sempre voltar para A fazer.
+- Terminar a última subtarefa sugere concluir a tarefa, sem concluir sozinho.
+- A ordem Recomendada coloca prazos próximos antes das tarefas sem data e respeita a prioridade dentro de cada grupo.
+- Arquivar um projeto pergunta o que fazer com as tarefas. Restaurar traz de volta só as que foram arquivadas junto.
+- O número de Hoje, a lista do painel e a tela Hoje mostram sempre as mesmas tarefas, e concluídas não entram mais nessa conta.
+- "Ver todas" no painel abre exatamente as tarefas daquele bloco, sem filtros antigos escondendo itens.
+- "Há quanto tempo aguardando" passou a contar desde o início da espera, não desde a última edição da tarefa.
+- A linha da tarefa mostra prazo e lembrete quando ela tem os dois, cada um com seu nome.
+- Campo Aguardando na edição só aparece quando o status pede, com o nome certo para Bloqueada.
+
+### Alterado
+- Vocabulário único: Lembrete no lugar de Revisão e Revisar novamente, Resolver lembrete no lugar de Registrar acompanhamento, Próximo passo no lugar de Próxima ação, Quadro no lugar de Kanban, Recomendada no lugar de Inteligente, Bloqueada e Concluída no feminino, como as demais.
+- Painel reorganizado: primeiro o dia e o que espera por você; os gráficos e o relatório ficam no fim. Títulos mais diretos: Hoje, Outras que pedem atenção, Prioridade e prazo, Situação das abertas, Próximas duas semanas, Próximos lembretes.
+
+### Segurança
+- Next.js atualizado de 16.3.8 para 16.4.3 e zod de 4.6.5 para 4.6.7, para corrigir falhas conhecidas nessas bibliotecas (GHSA-2464-fhr4-w9xw, GHSA-673q-mjm6-r5xr, GHSA-p3m5-59mp-jv5r e GHSA-mrhx-c7xc-m3w5). Nada muda no uso do app.
+
 ## [1.2.0] - 2026-11-02
 
 ### Adicionado

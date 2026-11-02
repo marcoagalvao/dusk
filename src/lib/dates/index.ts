@@ -1,8 +1,8 @@
-import { addDays, differenceInCalendarDays, format, isValid, startOfWeek } from "date-fns";
+import { addDays, addMonths, differenceInCalendarDays, format, isValid, startOfWeek } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
 /**
- * Datas civis (prazo, revisão, foco) são strings `YYYY-MM-DD` interpretadas no
+ * Datas civis (prazo, lembrete, foco) são strings `YYYY-MM-DD` interpretadas no
  * fuso local. Timestamps são ISO 8601 completos. Nunca converta uma data civil
  * com `new Date("YYYY-MM-DD")`: isso a interpreta como UTC e pode mudar o dia.
  */
@@ -39,6 +39,21 @@ export function isValidIsoTimestamp(value: unknown): value is string {
 
 export function addDaysToKey(key: DateKey, days: number): DateKey {
   return toDateKey(addDays(parseDateKey(key), days));
+}
+
+/** A data civil de agora num fuso. Fuso desconhecido cai no horário universal, sem interromper o envio. */
+export function dateKeyInTimeZone(timeZone: string, now: Date = new Date()): DateKey {
+  const format = (zone: string) =>
+    new Intl.DateTimeFormat("en-CA", { timeZone: zone, year: "numeric", month: "2-digit", day: "2-digit" }).format(now);
+  try {
+    return format(timeZone);
+  } catch {
+    return format("UTC");
+  }
+}
+
+export function addMonthsToKey(key: DateKey, months: number): DateKey {
+  return toDateKey(addMonths(parseDateKey(key), months));
 }
 
 /** Diferença em dias civis: positivo quando `a` é depois de `b`. */

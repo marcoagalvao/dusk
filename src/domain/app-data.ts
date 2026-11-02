@@ -5,7 +5,7 @@ import type { Task } from "./task";
 /** Versão atual do formato salvo. Qualquer mudança exige migration explícita. */
 export const SCHEMA_VERSION = 1;
 
-export const APP_VERSION = "1.2.0";
+export const APP_VERSION = "1.3.0";
 
 export interface AppData {
   tasks: Task[];

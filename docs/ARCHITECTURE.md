@@ -4,7 +4,7 @@ Como o Dusk é organizado e como um dado vai da tela ao banco e volta.
 
 ## Visão geral
 
-O Dusk é um app Next.js que roda quase todo no navegador. Não há API própria nem Server Actions: o navegador fala direto com o Supabase, e o RLS garante que cada usuário só alcance as próprias linhas.
+O Dusk é um app Next.js que roda quase todo no navegador. Não há Server Actions: o navegador fala direto com o Supabase, e o RLS garante que cada usuário só alcance as próprias linhas. A única rota de servidor é a do resumo diário (ver "Avisos").
 
 ```text
 Componente ─► actions/* ─► store Zustand ─► persist (store/persistence.ts)
@@ -24,14 +24,16 @@ Componente ─► actions/* ─► store Zustand ─► persist (store/persisten
 | `src/components/layout/` | `AppShell` (portão de login e estados de carga), sidebar, navegação mobile, `PageContainer` |
 | `src/components/auth/` | `LoginView`, `useAuthUser` |
 | `src/components/dashboard/` | Painel da visão geral (ver `DASHBOARD.md`) |
-| `src/components/tasks/`, `projects/`, `archive/`, `settings/` | Telas de cada área |
+| `src/components/tasks/`, `projects/`, `archive/`, `settings/`, `help/` | Telas de cada área |
 | `src/components/ui/` | Componentes-base, incluindo `SyncBadge` |
-| `src/actions/` | Mutações com feedback: tarefas, projetos, dados e login |
+| `src/actions/` | Mutações com feedback: tarefas, projetos, dados, login e avisos |
 | `src/store/` | `app-store` (dados, com slices), `ui-store` (estado de interface, em memória), `persistence` (ponte com o `persist`) |
 | `src/domain/` | Tipos, regras e consultas puras, incluindo `dashboard-metrics.ts` |
 | `src/hooks/` | `use-store-hydration`, `use-clock`, `use-hotkey`, `use-review-reminder` |
 | `src/lib/persistence/` | Sincronização, mapeamento para linhas, schema zod, migrations e leitor legado |
 | `src/lib/supabase/client.ts` | Cliente Supabase único e checagem das variáveis de ambiente |
+| `src/lib/push/` | Assinar o aparelho (`client.ts`) e enviar o resumo diário (`send-digests.ts`) |
+| `public/sw.js` | Service worker que mostra a notificação e abre `/tasks/today` ao tocar |
 | `src/lib/backup/`, `src/lib/dates/`, `src/lib/utils/` | Backup JSON, datas pt-BR e utilitários |
 | `supabase/migrations/` | SQL versionado do banco |
 
@@ -40,12 +42,15 @@ Componente ─► actions/* ─► store Zustand ─► persist (store/persisten
 | Rota | Tela |
 | --- | --- |
 | `/` | Visão geral (painel) |
-| `/tasks` | Lista ou Kanban. `?view=list\|kanban` força a visualização sem mudar a preferência |
+| `/tasks` | Lista ou Quadro. `?view=list\|kanban` força a visualização sem mudar a preferência |
 | `/tasks/today`, `/tasks/upcoming`, `/tasks/waiting`, `/tasks/overdue` | Vistas filtradas |
 | `/tasks/[id]` | Detalhe da tarefa |
 | `/projects`, `/projects/[id]` | Projetos |
 | `/archive` | Arquivo |
-| `/settings` | Configurações, backup e conta |
+| `/help` | Como funciona: o glossário do app |
+| `/settings` | Configurações, avisos, backup e conta |
+| `/api/cron/reminders` | Só servidor. Envia o resumo diário; exige o `CRON_SECRET` |
+| `/manifest.webmanifest` | Dados para instalar o app, gerados por `src/app/manifest.ts` |
 
 ## Abertura do app
 
@@ -62,7 +67,7 @@ A store usa `skipHydration`, então só é carregada depois da montagem e do log
 
 - Só e-mail e senha, via Supabase Auth. A sessão fica no `localStorage`, e não há middleware nem cookies.
 - A interface não tem cadastro: o usuário é criado no painel do Supabase (ver `SETUP.md`).
-- `signOut` (`src/actions/auth-actions.ts`) tenta enviar a fila. Se ainda houver pendências, cancela a saída e avisa, para não perder alterações. Se o Supabase não confirmar a saída (sem rede, por exemplo), o usuário continua logado e conectado. Ao sair, o cache local é apagado.
+- `signOut` (`src/actions/auth-actions.ts`) tenta enviar a fila. Se ainda houver pendências, cancela a saída e avisa, para não perder alterações. Se o Supabase não confirmar a saída (sem rede, por exemplo), o usuário continua logado e conectado. Antes de sair, tenta desligar os avisos deste aparelho. Ao sair, o cache local é apagado.
 - A limpeza da store acontece depois de `disconnect()`. Por isso zerar a memória no logout não vira `DELETE` no banco.
 
 ## Sincronização
@@ -93,6 +98,14 @@ Implementada em `src/lib/persistence/synced-persistence.ts`.
 **Conflitos:** como só as linhas alteradas viajam, dois dispositivos só colidem se editarem o mesmo item. Nesse caso, vence a última gravação.
 
 **Status na interface:** `SyncBadge` mostra `saving`, `saved` ou `offline` a partir de `ui-store.syncStatus`.
+
+## Avisos
+
+1. **Ligar** (`/settings`): `lib/push/client.ts` pede a permissão, registra `public/sw.js`, assina o aparelho com a chave pública VAPID e grava em `push_subscriptions`, com o fuso do navegador. Essa escrita vai direto ao Supabase, sem passar pela fila, porque só faz sentido com conexão e não pertence ao estado do app.
+2. **Enviar:** o Cron da Vercel (`vercel.json`) chama `/api/cron/reminders` uma vez por dia às 11:00 UTC, 08:00 em Brasília, com `Authorization: Bearer CRON_SECRET`.
+3. A rota lê com a chave secreta do Supabase as assinaturas e as tarefas não arquivadas, calcula o dia no fuso de cada aparelho e usa `dailyDigest` para montar o texto. Sem nada para o dia, não envia. Resposta 404 ou 410 do serviço do navegador remove a assinatura.
+
+Sem as variáveis, a rota responde 503 e a tela diz que os avisos não estão configurados; o restante do app não muda.
 
 ## Dados antigos do navegador
 

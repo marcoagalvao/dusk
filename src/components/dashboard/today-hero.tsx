@@ -19,7 +19,7 @@ function headline(pulse: TodayPulse): { text: string; tone: "alert" | "calm"; ic
   }
   if (pulse.urgent > 0) {
     return {
-      text: pulse.urgent === 1 ? "1 tarefa urgente na fila" : `${pulse.urgent} tarefas urgentes na fila`,
+      text: pulse.urgent === 1 ? "1 tarefa urgente em aberto" : `${pulse.urgent} tarefas urgentes em aberto`,
       tone: "alert",
       icon: Flag,
     };
@@ -43,8 +43,8 @@ const ALERTS: readonly AlertDefinition[] = [
   { key: "urgent", label: "Urgentes", icon: Flag, critical: true, filters: { priority: "urgent" } },
   { key: "blocked", label: "Bloqueadas", icon: Ban, critical: true, filters: { status: "blocked" } },
   { key: "waiting", label: "Aguardando", icon: Clock3, href: "/tasks/waiting" },
-  { key: "reviewsDue", label: "Para revisar", icon: RotateCcw, filters: { reviewDue: true, completion: "all" } },
-  { key: "doneToday", label: "Feitas hoje", icon: Check, filters: { completion: "today" } },
+  { key: "reviewsDue", label: "Lembretes", icon: RotateCcw, filters: { reviewDue: true, completion: "all" } },
+  { key: "doneToday", label: "Concluídas hoje", icon: Check, filters: { completion: "today" } },
 ];
 
 /** O número do dia e os alertas: o que dá para entender sem ler nada mais. */
@@ -79,7 +79,7 @@ export function TodayHero({ pulse }: { pulse: TodayPulse }) {
         </div>
       </div>
 
-      <ul className="mt-4 grid flex-1 auto-rows-fr grid-cols-3 gap-1.5">
+      <ul className="mt-4 grid auto-rows-fr grid-cols-3 gap-1.5">
         {ALERTS.map(({ key, label, icon: Icon, critical, href, filters }) => {
           const value = pulse[key];
           const hot = critical && value > 0;
@@ -98,7 +98,7 @@ export function TodayHero({ pulse }: { pulse: TodayPulse }) {
                   <span className={cn("text-hero font-semibold tracking-[-0.02em]", value === 0 ? "text-ink-subtle" : "text-ink")}>{value}</span>
                   <Icon aria-hidden="true" className={cn("size-3.5", hot ? "text-status-blocked" : "text-ink-subtle")} />
                 </span>
-                <span className={cn("truncate text-label", value === 0 ? "text-ink-subtle" : "text-ink-muted")}>{label}</span>
+                <span className={cn("text-label leading-tight", value === 0 ? "text-ink-subtle" : "text-ink-muted")}>{label}</span>
               </FilterLink>
             </li>
           );

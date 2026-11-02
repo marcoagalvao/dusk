@@ -3,7 +3,7 @@ import { z } from "zod";
 import { SCHEMA_VERSION, type AppData, type PersistedAppState } from "@/domain/app-data";
 import { isProjectColor, PROJECT_NAME_MAX_LENGTH, type Project, type ProjectColor } from "@/domain/project";
 import { DEFAULT_SETTINGS, TASK_VIEWS, type AppSettings } from "@/domain/settings";
-import { TASK_PRIORITIES, TASK_STATUSES, TASK_UPDATE_TYPES, type Task } from "@/domain/task";
+import { TASK_PRIORITIES, TASK_RECURRENCES, TASK_STATUSES, TASK_UPDATE_TYPES, type Task } from "@/domain/task";
 import { isValidDateKey, isValidIsoTimestamp, nowIso } from "@/lib/dates";
 import { cleanText } from "@/lib/utils/text";
 
@@ -73,6 +73,7 @@ const taskSchema = z.object({
   waitingFor: optionalText,
   nextAction: optionalText,
   note: optionalText,
+  recurrence: z.enum(TASK_RECURRENCES).optional().catch(undefined),
   subtasks: lenientList(subtaskSchema),
   updates: lenientList(taskUpdateSchema),
   createdAt: timestamp,

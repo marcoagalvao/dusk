@@ -97,6 +97,7 @@ export function createSampleData(today: string, now: Date = new Date()): AppData
   ]);
 
   task("Revisar SEO das páginas internas", integradas.id, 24 * 4, [{ hoursAgo: 24 * 4, patch: { priority: "low" } }]);
+  task("Enviar relatório da semana", kleron.id, 24 * 3, [{ hoursAgo: 24 * 3, patch: { dueDate: day(3), recurrence: "weekly" } }]);
 
   task("Ajustar responsivo da landing", enber.id, 24 * 3, [
     { hoursAgo: 30, status: "in_progress" },

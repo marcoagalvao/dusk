@@ -20,6 +20,7 @@ import {
 import type { Project } from "@/domain/project";
 import { FOCUS_SOFT_LIMIT, type Task } from "@/domain/task";
 import {
+  getStaleFocus,
   getUpcomingReviews,
   isArchived,
   isInFocus,
@@ -34,15 +35,17 @@ import { cn } from "@/lib/utils/cn";
 import { useProjectMap, useProjects, useSettings, useTasks } from "@/store/hooks";
 import { useUiStore } from "@/store/ui-store";
 
-import { AttentionItem } from "./attention-item";
+import { FilterLink } from "./filter-link";
 import { FocusPickerDialog } from "./focus-picker-dialog";
 import { Greeting } from "./greeting";
 import { PriorityMatrixGrid, StatusBar } from "./pending-map";
 import { PeriodReportSection } from "./period-report-section";
 import { ReviewItem } from "./review-item";
+import { StaleFocusBanner } from "./stale-focus-banner";
 import { Tile, TileHeading } from "./tile";
 import { TodayHero } from "./today-hero";
 import { UpcomingCalendar } from "./upcoming-calendar";
+import { WaitingItem } from "./waiting-item";
 
 const AGENDA_LIMIT = 7;
 const ALSO_LIMIT = 3;
@@ -55,11 +58,16 @@ function Panel({ children, className }: { children: ReactNode; className?: strin
   return <ul className={cn("flex flex-col rounded-card border border-line/60 bg-surface/60 p-1", className)}>{children}</ul>;
 }
 
-function MoreLink({ href, label }: { href: string; label: string }) {
+/** Limpa os filtros ao abrir: a lista precisa mostrar o que este bloco está contando. */
+function MoreLink({ href, label, selection }: { href?: string; label: string; selection?: { label: string; taskIds: string[] } }) {
   return (
-    <Link href={href} className="focus-ring rounded-[6px] text-label whitespace-nowrap text-ink-muted transition-colors duration-120 hover:text-ink">
+    <FilterLink
+      href={href}
+      filters={selection ? { selection } : undefined}
+      className="focus-ring rounded-[6px] text-label whitespace-nowrap text-ink-muted transition-colors duration-120 hover:text-ink"
+    >
       {label}
-    </Link>
+    </FilterLink>
   );
 }
 
@@ -102,9 +110,10 @@ export function DashboardView() {
     const agenda = getTodayAgenda(tasks, today);
     return {
       pulse: todayPulse(tasks, today),
-      // "Hoje" é o mesmo recorte do herói e da vista /tasks/today; o resto pede atenção sem ter data hoje.
-      agendaToday: agenda.filter((task) => isTodayRelevant(task, today)),
-      agendaAlso: agenda.filter((task) => !isTodayRelevant(task, today)),
+      // "Hoje" é o mesmo recorte do número, do herói e da vista /tasks/today: só abertas. O resto pede atenção sem ter data hoje.
+      agendaToday: agenda.filter((task) => isOpen(task) && isTodayRelevant(task, today)),
+      agendaAlso: agenda.filter((task) => isOpen(task) && !isTodayRelevant(task, today)),
+      staleFocus: getStaleFocus(tasks, today),
       focusOpen,
       matrix: priorityMatrix(tasks, today),
       statuses: statusBreakdown(tasks),
@@ -153,13 +162,16 @@ export function DashboardView() {
       <Greeting now={now} name={settings.displayName} />
 
       <div className="flex flex-col gap-8 lg:gap-10">
-        <div className="grid gap-2 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)] lg:items-stretch">
+        <div className="flex flex-col gap-2">
+          <StaleFocusBanner tasks={view.staleFocus} today={today} />
+          <div className="grid gap-2 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)] lg:items-stretch">
           <TodayHero pulse={view.pulse} />
 
           <Tile labelledBy="agenda-heading">
             <TileHeading
               id="agenda-heading"
-              title="Para fazer hoje"
+              title="Hoje"
+              hint="Seu foco, prazos até hoje e lembretes que chegaram."
               count={view.pulse.pending}
               action={
                 <span className="flex items-center gap-2">
@@ -186,12 +198,25 @@ export function DashboardView() {
             ) : (
               <AgendaList tasks={view.agendaToday.slice(0, AGENDA_LIMIT)} projectsById={projectsById} today={today} />
             )}
+            {view.agendaToday.length > AGENDA_LIMIT && (
+              <p className="mt-2 pl-3 text-label text-ink-muted">
+                Mostrando {AGENDA_LIMIT} de {view.agendaToday.length}. <MoreLink href="/tasks/today" label="Ver todas" />
+              </p>
+            )}
             {view.agendaAlso.length > 0 && (
               <div className="mt-4 border-t border-line/40 pt-3">
-                <h3 className="mb-1 flex items-baseline gap-2 text-label font-semibold text-ink-muted">
-                  Também pedem atenção
-                  <span className="text-meta font-normal text-ink-subtle">{view.agendaAlso.length}</span>
-                </h3>
+                <TileHeading
+                  level="h3"
+                  className="mb-1"
+                  title="Outras que pedem atenção"
+                  hint="Urgentes ou bloqueadas, sem data para hoje."
+                  count={view.agendaAlso.length}
+                  action={
+                    view.agendaAlso.length > ALSO_LIMIT && (
+                      <MoreLink label="Ver todas" selection={{ label: "Outras que pedem atenção", taskIds: view.agendaAlso.map((task) => task.id) }} />
+                    )
+                  }
+                />
                 <AgendaList tasks={view.agendaAlso.slice(0, ALSO_LIMIT)} projectsById={projectsById} today={today} />
               </div>
             )}
@@ -201,29 +226,8 @@ export function DashboardView() {
               </p>
             )}
           </Tile>
+          </div>
         </div>
-
-        <div className="grid gap-2 lg:grid-cols-[minmax(0,7fr)_minmax(0,5fr)]">
-          <Tile labelledBy="map-heading">
-            <TileHeading
-              id="map-heading"
-              title="Onde está a urgência"
-              hint="Tarefas abertas por prioridade e prazo. Clique num número para ver quais são."
-            />
-            <PriorityMatrixGrid matrix={view.matrix} />
-          </Tile>
-          <Tile labelledBy="status-heading">
-            <TileHeading id="status-heading" title="Em que pé estão as abertas" />
-            <StatusBar counts={view.statuses} />
-          </Tile>
-        </div>
-
-        <section aria-labelledby="calendar-heading">
-          <TileHeading id="calendar-heading" title="O que vem nas próximas duas semanas" action={<MoreLink href="/tasks/upcoming" label="Ver todas" />} />
-          <UpcomingCalendar days={view.calendar} today={today} />
-        </section>
-
-        <PeriodReportSection tasks={tasks} projects={projects} today={today} />
 
         <div className="grid gap-8 lg:grid-cols-3 lg:gap-x-6">
           <section aria-labelledby="waiting-heading">
@@ -238,12 +242,11 @@ export function DashboardView() {
             ) : (
               <Panel>
                 {view.waiting.slice(0, WAITING_LIMIT).map((task) => (
-                  <AttentionItem
+                  <WaitingItem
                     key={task.id}
                     task={task}
                     project={task.projectId ? projectsById.get(task.projectId) : undefined}
                     today={today}
-                    variant="waiting"
                   />
                 ))}
               </Panel>
@@ -253,14 +256,18 @@ export function DashboardView() {
           <section aria-labelledby="reviews-heading">
             <TileHeading
               id="reviews-heading"
-              title="Para revisar em breve"
+              title="Próximos lembretes"
               count={view.reviews.length}
-              action={view.reviews.length > REVIEWS_LIMIT && <MoreLink href="/tasks/upcoming" label="Ver todas" />}
+              action={
+                view.reviews.length > REVIEWS_LIMIT && (
+                  <MoreLink label="Ver todos" selection={{ label: "Próximos lembretes", taskIds: view.reviews.map((task) => task.id) }} />
+                )
+              }
             />
             {view.reviews.length === 0 ? (
               <p className="pl-1 text-compact text-ink-muted">
-                Nenhuma revisão nos próximos {REVIEW_HORIZON_DAYS} dias. Use “Revisar novamente” numa tarefa para ser lembrado
-                de voltar a ela.
+                Nenhum lembrete nos próximos {REVIEW_HORIZON_DAYS} dias. Marque um lembrete numa tarefa para voltar a ela no dia
+                certo.
               </p>
             ) : (
               <Panel>
@@ -294,6 +301,28 @@ export function DashboardView() {
             )}
           </section>
         </div>
+
+        <div className="grid gap-2 lg:grid-cols-[minmax(0,7fr)_minmax(0,5fr)]">
+          <Tile labelledBy="map-heading">
+            <TileHeading
+              id="map-heading"
+              title="Prioridade e prazo"
+              hint="Tarefas abertas por prioridade e prazo. Clique num número para ver quais são."
+            />
+            <PriorityMatrixGrid matrix={view.matrix} />
+          </Tile>
+          <Tile labelledBy="status-heading">
+            <TileHeading id="status-heading" title="Situação das abertas" />
+            <StatusBar counts={view.statuses} />
+          </Tile>
+        </div>
+
+        <section aria-labelledby="calendar-heading">
+          <TileHeading id="calendar-heading" title="Próximas duas semanas" action={<MoreLink href="/tasks/upcoming" label="Ver todas" />} />
+          <UpcomingCalendar days={view.calendar} today={today} />
+        </section>
+
+        <PeriodReportSection tasks={tasks} projects={projects} today={today} />
       </div>
 
       <FocusPickerDialog open={focusPickerOpen} onOpenChange={setFocusPickerOpen} today={today} />

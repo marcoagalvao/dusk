@@ -17,9 +17,9 @@ export function updateProject(id: string, input: ProjectInput): void {
   toast.success("Projeto atualizado");
 }
 
-export function archiveProject(id: string): void {
-  store().archiveProject(id);
-  toast.show("Projeto arquivado", {
+export function archiveProject(id: string, options?: { withTasks?: boolean }): void {
+  store().archiveProject(id, options);
+  toast.show(options?.withTasks ? "Projeto e tarefas arquivados" : "Projeto arquivado", {
     duration: 5000,
     action: { label: "Desfazer", onAction: () => store().unarchiveProject(id) },
   });

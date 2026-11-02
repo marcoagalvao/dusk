@@ -11,10 +11,11 @@ import { Kbd } from "@/components/ui/misc";
 import {
   PROGRESS_PRESETS,
   applyPreset,
+  changeFormStatus,
   type ProgressFocusField,
   type ProgressFormValues,
 } from "@/domain/progress-presets";
-import { STATUS_LABELS, STATUSES_WITH_WAITING, TASK_STATUSES, type Task, type TaskStatus } from "@/domain/task";
+import { STATUS_DESCRIPTIONS, STATUS_LABELS, STATUSES_WITH_WAITING, TASK_STATUSES, type Task, type TaskStatus } from "@/domain/task";
 import { hasProgressChanges } from "@/domain/task-rules";
 import { useToday } from "@/hooks/use-clock";
 import { cn } from "@/lib/utils/cn";
@@ -63,6 +64,7 @@ function ProgressForm({ task, intent, onDone }: { task: Task; intent?: ProgressD
     nextAction: useId(),
     reviewDate: useId(),
     note: useId(),
+    presets: useId(),
   };
   const [values, setValues] = useState(() => initialValues(task, intent));
   const submittedRef = useRef(false);
@@ -91,11 +93,7 @@ function ProgressForm({ task, intent, onDone }: { task: Task; intent?: ProgressD
     event?.preventDefault();
     if (!canSave || submittedRef.current) return;
     submittedRef.current = true;
-    saveProgress(task.id, {
-      ...values,
-      // Campo oculto mantém o valor atual em vez de apagá-lo silenciosamente.
-      waitingFor: showWaiting ? values.waitingFor : task.waitingFor,
-    });
+    saveProgress(task.id, values);
     onDone();
   };
 
@@ -105,7 +103,9 @@ function ProgressForm({ task, intent, onDone }: { task: Task; intent?: ProgressD
 
   return (
     <form onSubmit={handleSubmit} onKeyDown={handleKeyDown} className="flex flex-col gap-4">
-      <div role="group" aria-label="Atalhos de atualização" className="-mx-4 flex gap-1.5 overflow-x-auto px-4 pb-1 scrollbar-none sm:mx-0 sm:flex-wrap sm:px-0">
+      <div className="flex flex-col gap-1.5">
+      <p id={ids.presets} className="text-label font-medium text-ink-muted">Atalhos</p>
+      <div role="group" aria-labelledby={ids.presets} className="-mx-4 flex gap-1.5 overflow-x-auto px-4 pb-1 scrollbar-none sm:mx-0 sm:flex-wrap sm:px-0">
         {PROGRESS_PRESETS.map((preset) => {
           const active = values.preset === preset.id;
           return (
@@ -129,9 +129,14 @@ function ProgressForm({ task, intent, onDone }: { task: Task; intent?: ProgressD
           );
         })}
       </div>
+      </div>
 
-      <Field label="Status" htmlFor={ids.status}>
-        <Select id={ids.status} value={values.status} onChange={(event) => set("status", event.target.value as TaskStatus)}>
+      <Field label="Status" htmlFor={ids.status} hint={STATUS_DESCRIPTIONS[values.status]}>
+        <Select
+          id={ids.status}
+          value={values.status}
+          onChange={(event) => setValues((current) => changeFormStatus(current, event.target.value as TaskStatus))}
+        >
           {TASK_STATUSES.map((status) => (
             <option key={status} value={status}>
               {STATUS_LABELS[status]}
@@ -153,7 +158,7 @@ function ProgressForm({ task, intent, onDone }: { task: Task; intent?: ProgressD
 
       {showWaiting && (
         <Field
-          label={isWaiting ? "Aguardando" : "Bloqueado por"}
+          label={isWaiting ? "Aguardando" : "Bloqueada por"}
           htmlFor={ids.waitingFor}
           emphasized={isWaiting && !values.waitingFor}
           hint={isWaiting && !values.waitingFor ? "Quem ou o quê? Ajuda a saber quem cobrar depois." : undefined}
@@ -169,7 +174,7 @@ function ProgressForm({ task, intent, onDone }: { task: Task; intent?: ProgressD
         </Field>
       )}
 
-      <Field label="Próxima ação" htmlFor={ids.nextAction}>
+      <Field label="Próximo passo" htmlFor={ids.nextAction}>
         <Input
           id={ids.nextAction}
           value={values.nextAction}
@@ -181,10 +186,10 @@ function ProgressForm({ task, intent, onDone }: { task: Task; intent?: ProgressD
       </Field>
 
       <Field
-        label="Revisar novamente"
+        label="Lembrete"
         htmlFor={ids.reviewDate}
         emphasized={isWaiting && !values.reviewDate}
-        hint={isWaiting && !values.reviewDate ? "Quando voltar a olhar se não houver resposta?" : undefined}
+        hint={isWaiting && !values.reviewDate ? "Quando voltar a olhar se não houver resposta?" : "Quando voltar a olhar."}
       >
         <DateField
           id={ids.reviewDate}

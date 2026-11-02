@@ -2,11 +2,13 @@
 
 import {
   Archive,
+  CircleHelp,
   House,
   ListTodo,
   PanelLeftClose,
   PanelLeftOpen,
   Plus,
+  Search,
   Settings,
   type LucideIcon,
 } from "lucide-react";
@@ -72,6 +74,7 @@ export function Sidebar({ className }: { className?: string }) {
   const { sidebarCollapsed: collapsed } = useSettings();
   const updateSettings = useAppStore((state) => state.updateSettings);
   const openQuickCreate = useUiStore((state) => state.openQuickCreate);
+  const setCommandOpen = useUiStore((state) => state.setCommandOpen);
   const hydrated = useUiStore((state) => state.hydrated);
 
   const counts = useMemo(() => {
@@ -121,6 +124,19 @@ export function Sidebar({ className }: { className?: string }) {
           <Plus aria-hidden="true" className="size-4" />
           {collapsed ? <span className="sr-only">Nova tarefa</span> : <span className="flex-1 text-left">Nova tarefa</span>}
           {!collapsed && <Kbd className="text-on-primary/80">N</Kbd>}
+        </button>
+        <button
+          type="button"
+          onClick={() => setCommandOpen(true)}
+          title={collapsed ? "Buscar (Ctrl+K)" : undefined}
+          className={cn(
+            "focus-ring mt-2 flex h-9 w-full items-center gap-2 rounded-control text-ink-muted transition-colors duration-120 hover:bg-raised/60 hover:text-ink",
+            collapsed ? "justify-center" : "px-2.5 text-compact",
+          )}
+        >
+          <Search aria-hidden="true" className="size-4" />
+          {collapsed ? <span className="sr-only">Buscar</span> : <span className="flex-1 text-left">Buscar</span>}
+          {!collapsed && <Kbd>Ctrl K</Kbd>}
         </button>
       </div>
 
@@ -208,7 +224,8 @@ export function Sidebar({ className }: { className?: string }) {
         </div>
       </nav>
 
-      <div className="border-t border-line/70 px-3 py-3">
+      <div className="flex flex-col gap-0.5 border-t border-line/70 px-3 py-3">
+        <NavLink href="/help" label="Como funciona" icon={CircleHelp} active={pathname === "/help"} collapsed={collapsed} />
         <NavLink href="/settings" label="Configurações" icon={Settings} active={pathname === "/settings"} collapsed={collapsed} />
       </div>
     </aside>

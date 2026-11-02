@@ -16,7 +16,7 @@ interface StatusGlyphProps {
 /**
  * Cada status tem uma forma própria, não só uma cor (PRD §61):
  * A fazer = anel · Em andamento = meio preenchido · Aguardando = anel tracejado
- * Bloqueado = anel cortado · Concluído = disco com check.
+ * Bloqueada = anel cortado · Concluída = disco com check.
  */
 export function StatusGlyph({ status, size = 18, className, previewCheck, animateCheck }: StatusGlyphProps) {
   const color = STATUS_COLOR[status];

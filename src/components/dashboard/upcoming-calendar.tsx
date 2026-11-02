@@ -50,13 +50,13 @@ export function UpcomingCalendar({ days, today }: { days: readonly UpcomingDay[]
                   <li key={`${task.id}-${kind}`}>
                     <Link
                       href={`/tasks/${task.id}`}
-                      title={`${kind === "due" ? "Prazo" : "Revisão"}: ${task.title}`}
+                      title={`${kind === "due" ? "Prazo" : "Lembrete"}: ${task.title}`}
                       className="focus-ring flex items-start gap-1.5 rounded-[5px] text-meta text-ink transition-colors duration-120 hover:text-primary"
                     >
                       <span className="flex h-[1lh] items-center">
                         <Marker kind={kind} color={PRIORITY_COLOR[task.priority]} />
                       </span>
-                      <span className="sr-only">{kind === "due" ? "Prazo:" : "Revisão:"}</span>
+                      <span className="sr-only">{kind === "due" ? "Prazo:" : "Lembrete:"}</span>
                       <span className="line-clamp-2 min-w-0">{task.title}</span>
                     </Link>
                   </li>
@@ -66,7 +66,7 @@ export function UpcomingCalendar({ days, today }: { days: readonly UpcomingDay[]
                 <FilterLink
                   filters={{
                     selection: {
-                      label: `Prazos e revisões de ${isToday ? "hoje" : formatShortDate(day.date, today).slice(0, 5)}`,
+                      label: `Prazos e lembretes de ${isToday ? "hoje" : formatShortDate(day.date, today).slice(0, 5)}`,
                       taskIds: day.items.map(({ task }) => task.id),
                     },
                   }}
@@ -86,7 +86,7 @@ export function UpcomingCalendar({ days, today }: { days: readonly UpcomingDay[]
         </span>
         <span className="inline-flex items-center gap-1.5">
           <Marker kind="review" color="var(--color-ink-muted)" />
-          Revisão
+          Lembrete
         </span>
         {TASK_PRIORITIES.map((priority) => (
           <span key={priority} className="inline-flex items-center gap-1.5">

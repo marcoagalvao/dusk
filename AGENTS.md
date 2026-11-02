@@ -23,6 +23,7 @@ Dusk é um gerenciador pessoal de tarefas em pt-BR, tema escuro, para desktop e 
 | Rodar localmente, variáveis de ambiente, Supabase e Vercel | [`docs/SETUP.md`](docs/SETUP.md) |
 | Por que algo foi feito de um jeito não óbvio | [`docs/TECHNICAL_DECISIONS.md`](docs/TECHNICAL_DECISIONS.md) |
 | O que mudou e quando | [`CHANGELOG.md`](CHANGELOG.md) |
+| O plano da revisão de usabilidade da versão 1.3 (histórico) | [`docs/PLANO_1.3.md`](docs/PLANO_1.3.md) |
 | A intenção original do produto (histórico) | [`PRD_Dusk_Task_Manager.md`](PRD_Dusk_Task_Manager.md) |
 | Como a V1 foi construída (histórico) | [`docs/PROJECT_LOG.md`](docs/PROJECT_LOG.md) |
 

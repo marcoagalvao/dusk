@@ -1,7 +1,8 @@
-import { FOCUS_SOFT_LIMIT, STATUS_LABELS, type Task, type TaskStatus } from "@/domain/task";
+import { FOCUS_SOFT_LIMIT, STATUS_LABELS, STATUSES_WITH_WAITING, type Task, type TaskStatus } from "@/domain/task";
 import { isInFocus } from "@/domain/task-queries";
-import type { CreateTaskInput, ProgressInput, TaskPatch } from "@/domain/task-rules";
-import { todayKey } from "@/lib/dates";
+import { leavesWaiting, subtaskProgress, type CreateTaskInput, type ProgressInput, type TaskPatch } from "@/domain/task-rules";
+import { formatRelativeDay, todayKey } from "@/lib/dates";
+import { pluralize } from "@/lib/utils/text";
 import { useAppStore } from "@/store/app-store";
 import { toast } from "@/store/ui-store";
 
@@ -14,6 +15,20 @@ import { toast } from "@/store/ui-store";
 const store = () => useAppStore.getState();
 
 const UNDO_DURATION = 5000;
+const EXPLAINED_UNDO_DURATION = 8000;
+
+const findTask = (id: string) => store().tasks.find((task) => task.id === id);
+
+/** Volta as tarefas ao estado anterior e remove as ocorrências que a conclusão criou. */
+function undoAction(snapshots: readonly Task[], created: readonly Task[] = []) {
+  return {
+    label: "Desfazer",
+    onAction: () => {
+      for (const snapshot of snapshots) store().restoreTask(snapshot);
+      for (const task of created) store().deleteTask(task.id);
+    },
+  };
+}
 
 export function createTask(input: CreateTaskInput): Task {
   const task = store().createTask(input);
@@ -21,32 +36,50 @@ export function createTask(input: CreateTaskInput): Task {
   return task;
 }
 
+function nextOccurrenceMessage(next: Task): string {
+  return `A próxima fica para ${formatRelativeDay(next.dueDate!).toLowerCase()}.`;
+}
+
+/** Conta o que aconteceu além de concluir: nada muda sem aviso. */
+function completionMessage(previous: Task, next?: Task): string {
+  const parts = ["Tarefa concluída."];
+  const { done, total } = subtaskProgress(previous);
+  if (done < total) parts.push(`${pluralize(total - done, "subtarefa ficou aberta", "subtarefas ficaram abertas")}.`);
+  if (STATUSES_WITH_WAITING.includes(previous.status) && (previous.waitingFor || previous.reviewDate)) parts.push("A espera foi encerrada.");
+  else if (previous.reviewDate) parts.push("O lembrete continua marcado.");
+  if (next) parts.push(nextOccurrenceMessage(next));
+  return parts.join(" ");
+}
+
 export function completeTask(id: string): void {
-  const previous = store().completeTask(id);
-  if (!previous) return;
-  toast.show("Tarefa concluída.", {
+  const result = store().completeTask(id);
+  if (!result) return;
+  const message = completionMessage(result.previous, result.next);
+  toast.show(message, {
     tone: "success",
-    duration: UNDO_DURATION,
-    action: {
-      label: "Desfazer",
-      onAction: () => store().restoreTask(previous),
-    },
+    duration: message === "Tarefa concluída." ? UNDO_DURATION : EXPLAINED_UNDO_DURATION,
+    action: undoAction([result.previous], result.next ? [result.next] : []),
   });
 }
 
 export function reopenTask(id: string): void {
   store().reopenTask(id);
-  toast.show("Tarefa reaberta");
+  const status = findTask(id)?.status;
+  toast.show(status ? `Tarefa reaberta: ${STATUS_LABELS[status]}` : "Tarefa reaberta");
 }
 
 export function setTaskStatus(id: string, status: TaskStatus, { silent = false } = {}): void {
-  const task = store().tasks.find((t) => t.id === id);
+  const task = findTask(id);
   if (!task || task.status === status) return;
   if (status === "completed") {
     completeTask(id);
     return;
   }
   store().setTaskStatus(id, status);
+  if (leavesWaiting(task.status, status) && (task.waitingFor || task.reviewDate)) {
+    toast.show(`Status: ${STATUS_LABELS[status]}. A espera foi encerrada.`, { duration: EXPLAINED_UNDO_DURATION, action: undoAction([task]) });
+    return;
+  }
   if (!silent) toast.show(`Status: ${STATUS_LABELS[status]}`);
 }
 
@@ -56,11 +89,25 @@ export function patchTask(id: string, patch: TaskPatch, message = "Alterações 
 }
 
 export function saveProgress(id: string, input: ProgressInput, message?: string): void {
-  const wasCompleted = store().tasks.find((t) => t.id === id)?.status === "completed";
-  store().saveProgress(id, input);
-  toast.success(
-    message ?? (input.status === "completed" && !wasCompleted ? "Atualização salva. Tarefa concluída." : "Atualização salva"),
-  );
+  const wasCompleted = findTask(id)?.status === "completed";
+  const next = store().saveProgress(id, input);
+  const text = message ?? (input.status === "completed" && !wasCompleted ? "Atualização salva. Tarefa concluída." : "Atualização salva");
+  toast.success(next ? `${text} ${nextOccurrenceMessage(next)}` : text);
+}
+
+/** Marca ou desmarca a subtarefa. Terminar a última sugere concluir a tarefa, sem concluir sozinho. */
+export function toggleSubtask(taskId: string, subtaskId: string): void {
+  store().toggleSubtask(taskId, subtaskId);
+  const task = findTask(taskId);
+  if (!task || task.status === "completed") return;
+  const { done, total } = subtaskProgress(task);
+  const justChecked = task.subtasks.find((subtask) => subtask.id === subtaskId)?.completed;
+  if (justChecked && done === total) {
+    toast.show("Todas as subtarefas foram feitas.", {
+      duration: EXPLAINED_UNDO_DURATION,
+      action: { label: "Concluir tarefa", onAction: () => completeTask(taskId) },
+    });
+  }
 }
 
 /** `silent` evita toasts em telas onde o próprio controle já mostra o resultado (seletor de foco). */
@@ -101,4 +148,52 @@ export function unarchiveTask(id: string): void {
 export function deleteTask(id: string): void {
   store().deleteTask(id);
   toast.show("Tarefa excluída");
+}
+
+// ---------------------------------------------------------------------------
+// Várias tarefas de uma vez
+// ---------------------------------------------------------------------------
+
+const snapshotsOf = (ids: readonly string[]) => store().tasks.filter((task) => ids.includes(task.id));
+
+function applyToMany(ids: readonly string[], message: string, apply: (id: string) => void): void {
+  const snapshots = snapshotsOf(ids);
+  for (const id of ids) apply(id);
+  toast.show(message, { duration: EXPLAINED_UNDO_DURATION, action: undoAction(snapshots) });
+}
+
+const openIds = (ids: readonly string[]) => snapshotsOf(ids).filter((task) => task.status !== "completed").map((task) => task.id);
+
+export function completeTasks(ids: readonly string[]): void {
+  const open = openIds(ids);
+  if (open.length === 0) return;
+  const snapshots = snapshotsOf(open);
+  const created: Task[] = [];
+  for (const id of open) {
+    const next = store().completeTask(id)?.next;
+    if (next) created.push(next);
+  }
+  toast.show(`${pluralize(open.length, "tarefa concluída", "tarefas concluídas")}.`, {
+    tone: "success",
+    duration: EXPLAINED_UNDO_DURATION,
+    action: undoAction(snapshots, created),
+  });
+}
+
+export function patchTasks(ids: readonly string[], patch: TaskPatch, message: string): void {
+  applyToMany(ids, message, (id) => store().patchTask(id, patch));
+}
+
+export function focusTasks(ids: readonly string[], today: string = todayKey()): void {
+  const open = openIds(ids);
+  if (open.length === 0) return;
+  applyToMany(open, `${pluralize(open.length, "tarefa no", "tarefas no")} foco de hoje.`, (id) => store().setFocus(id, today));
+}
+
+export function clearFocus(ids: readonly string[]): void {
+  applyToMany(ids, "Foco anterior dispensado.", (id) => store().setFocus(id, null));
+}
+
+export function archiveTasks(ids: readonly string[]): void {
+  applyToMany(ids, `${pluralize(ids.length, "tarefa arquivada", "tarefas arquivadas")}.`, (id) => store().archiveTask(id));
 }

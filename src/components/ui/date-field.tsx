@@ -11,7 +11,7 @@ interface DateFieldProps {
   onChange: (value: string) => void;
   today: string;
   inputRef?: React.Ref<HTMLInputElement>;
-  /** Atalhos voltados a follow-up ("revisar na segunda") ou a prazo. */
+  /** Atalhos voltados a lembrete ("na segunda") ou a prazo. */
   shortcuts?: "review" | "due";
   autoFocus?: boolean;
 }
