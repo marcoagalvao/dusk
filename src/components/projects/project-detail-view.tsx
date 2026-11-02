@@ -17,7 +17,7 @@ import {
 } from "@/components/ui/menu";
 import { EmptyState } from "@/components/ui/misc";
 import { StatusGlyph } from "@/components/ui/status-glyph";
-import { PROJECT_COLOR } from "@/components/ui/tokens";
+import { projectColorValue } from "@/components/ui/tokens";
 import type { Project } from "@/domain/project";
 import { STATUS_LABELS, type Task, type TaskStatus } from "@/domain/task";
 import { isArchived, projectStats, sortTasks } from "@/domain/task-queries";
@@ -82,7 +82,7 @@ function ProjectDetail({ project, onDeleted }: { project: Project; onDeleted: ()
         back={{ href: archived ? "/archive" : "/projects", label: archived ? "Arquivo" : "Projetos" }}
         title={
           <span className="flex items-center gap-3">
-            <span aria-hidden="true" className="size-3 shrink-0 rounded-full" style={{ backgroundColor: PROJECT_COLOR[project.color] }} />
+            <span aria-hidden="true" className="size-3 shrink-0 rounded-full" style={{ backgroundColor: projectColorValue(project.color) }} />
             <span className="min-w-0 break-words">{project.name}</span>
           </span>
         }

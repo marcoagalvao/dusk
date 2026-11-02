@@ -31,7 +31,7 @@ Definido em `src/domain/task.ts`, `project.ts`, `settings.ts` e `app-data.ts`.
 
 **TaskUpdate:** `id`, `taskId`, `type` (`progress`, `status_change`, `completed`, `reopened`), `preset?`, `status`, `done?`, `waitingFor?`, `nextAction?`, `note?`, `reviewDate?`, `createdAt`.
 
-**Project:** `id`, `name` (até 60 caracteres), `color` (`lavender`, `periwinkle`, `peach`, `rose`, `sage`, `sand`), `description?`, `archivedAt?`, `createdAt`, `updatedAt`.
+**Project:** `id`, `name` (até 60 caracteres), `color` (`lavender`, `periwinkle`, `peach`, `rose`, `sage`, `sand` ou uma cor livre em `#rrggbb` minúsculo), `description?`, `archivedAt?`, `createdAt`, `updatedAt`.
 
 **AppSettings:** `theme`, `defaultTaskView` (`list` ou `kanban`), `sidebarCollapsed`, `displayName?`.
 
@@ -82,6 +82,7 @@ A sessão do Supabase Auth também fica no `localStorage`, gerenciada pela bibli
 Migrations aplicadas:
 
 - `0001_initial_schema.sql`
+- `0002_project_custom_color.sql`
 
 Para mudar o banco:
 

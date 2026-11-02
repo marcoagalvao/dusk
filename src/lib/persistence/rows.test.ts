@@ -69,7 +69,8 @@ describe("stateToRows / rowsToState", () => {
 describe("schema do banco", () => {
   /** Colunas de cada `create table` da migration, sem o dono da linha e sem as constraints. */
   function migrationColumns(): Record<string, string[]> {
-    const sql = readFileSync(new URL("../../../supabase/migrations/0001_initial_schema.sql", import.meta.url), "utf8");
+    // O checkout no Windows pode trazer CRLF.
+    const sql = readFileSync(new URL("../../../supabase/migrations/0001_initial_schema.sql", import.meta.url), "utf8").replace(/\r\n/g, "\n");
     const tables = [...sql.matchAll(/create table public\.(\w+) \(\n([\s\S]*?)\n\);/g)];
     return Object.fromEntries(
       tables.map(([, table, body]) => [

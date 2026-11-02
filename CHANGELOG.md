@@ -4,6 +4,11 @@ Todas as mudanças relevantes do Dusk, da mais recente para a mais antiga. Forma
 
 Toda mudança entra aqui na mesma entrega, com a data. As regras estão em [`AGENTS.md`](AGENTS.md).
 
+## [1.2.0] - 2026-11-02
+
+### Adicionado
+- Projetos com cor livre: além das 6 cores prontas, uma tela de escolha permite arrastar até a cor desejada ou digitar hex e RGB. Requer a migration `0002_project_custom_color.sql` no Supabase.
+
 ## [1.1.0] - 2026-10-30
 
 ### Adicionado

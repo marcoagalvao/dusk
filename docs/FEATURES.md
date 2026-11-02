@@ -58,7 +58,7 @@ Painel para entender o dia de relance. Blocos, métricas e regras em [`DASHBOARD
 
 ## Projetos
 
-- Nome e cor (paleta fixa de 6) são obrigatórios; descrição é opcional. A cor sugerida é a menos usada.
+- Nome e cor são obrigatórios; descrição é opcional. A cor vem de uma paleta de 6, com a menos usada já sugerida, ou de uma tela de escolha livre: arrastar no quadrado e na faixa de matiz ou digitar hex e RGB.
 - `/projects/[id]` agrupa tarefas por status e cria tarefas já associadas.
 - Excluir projeto com tarefas nunca apaga as tarefas: o usuário escolhe arquivar, mover ou remover a associação.
 

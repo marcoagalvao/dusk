@@ -278,6 +278,17 @@ Diálogo próprio "Registrar acompanhamento" (`follow-up-dialog.tsx`) que reapro
 **Alternativas consideradas:**
 Reutilizar o modal de andamento com flags de modo (mais campos irrelevantes e lógica condicional); exigir reabrir a tarefa (muda o status de algo que já foi entregue).
 
+## Cor livre de projeto sem biblioteca
+
+**Contexto:**
+O §24 do PRD define uma paleta fixa de 6 cores. O usuário quis também escolher qualquer cor, arrastando numa tela como a dos editores de imagem.
+
+**Escolha:**
+A paleta continua, agora com um sétimo botão que abre a tela de escolha, feita à mão em `color-picker.tsx`. A coluna `color` guarda o nome da cor da paleta ou `#rrggbb`. As cores da paleta seguem nos tokens, então ajustar o tema continua alterando os projetos que as usam, e só a cor livre fica fixa. Uma cor muito escura gera um aviso, sem bloquear, porque o nome do projeto sempre aparece ao lado.
+
+**Alternativas consideradas:**
+`<input type="color">` (a aparência muda em cada navegador e não combina com o tema) e `react-colorful` (uma dependência para cerca de 200 linhas e sem os campos de RGB).
+
 ## Blocos do painel abrem as próprias tarefas contadas
 
 **Contexto:**

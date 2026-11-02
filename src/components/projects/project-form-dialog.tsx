@@ -1,15 +1,18 @@
 "use client";
 
-import { Check } from "lucide-react";
+import { Check, Plus } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useId, useState, type FormEvent, type ReactNode } from "react";
 
 import { createProject, updateProject } from "@/actions/project-actions";
 import { Button } from "@/components/ui/button";
+import { ColorPicker } from "@/components/ui/color-picker";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTrigger } from "@/components/ui/dialog";
 import { Field, Input, Textarea } from "@/components/ui/form-controls";
-import { PROJECT_COLOR } from "@/components/ui/tokens";
+import { Popover, PopoverClose, PopoverContent, PopoverTrigger } from "@/components/ui/menu";
+import { PROJECT_COLOR, projectColorHex } from "@/components/ui/tokens";
 import {
+  isCustomProjectColor,
   PROJECT_COLORS,
   PROJECT_COLOR_LABELS,
   PROJECT_NAME_MAX_LENGTH,
@@ -18,6 +21,7 @@ import {
 } from "@/domain/project";
 import { suggestProjectColor } from "@/domain/project-rules";
 import { cn } from "@/lib/utils/cn";
+import { contrastRatio } from "@/lib/utils/color";
 import { useProjects } from "@/store/hooks";
 
 interface ProjectFormDialogProps {
@@ -42,6 +46,53 @@ export function ProjectFormDialog({ project, trigger, open, onOpenChange, naviga
         <ProjectForm project={project} onDone={() => setOpen(false)} navigateOnCreate={navigateOnCreate} />
       </DialogContent>
     </Dialog>
+  );
+}
+
+const RAINBOW = "conic-gradient(#f00, #ff0, #0f0, #0ff, #00f, #f0f, #f00)";
+const SWATCH =
+  "focus-ring grid size-10 cursor-pointer place-items-center rounded-full border-2 transition-[border-color,transform] duration-120 hover:scale-105";
+
+/** Sétimo botão da paleta: abre a tela de escolha livre e, depois, mostra a cor escolhida. */
+function CustomColorButton({ color, onChange }: { color: ProjectColor; onChange: (color: ProjectColor) => void }) {
+  const [colorAtOpen, setColorAtOpen] = useState(color);
+  const custom = isCustomProjectColor(color);
+
+  return (
+    <Popover onOpenChange={(open) => open && setColorAtOpen(color)}>
+      <PopoverTrigger
+        role="radio"
+        aria-checked={custom}
+        aria-label={custom ? `Outra cor, ${color}. Alterar` : "Escolher outra cor"}
+        title="Escolher outra cor"
+        className={cn(SWATCH, custom ? "border-ink" : "border-transparent")}
+      >
+        <span
+          className="grid size-7 place-items-center rounded-full"
+          style={custom ? { backgroundColor: color } : { backgroundImage: RAINBOW }}
+        >
+          {custom ? (
+            <Check aria-hidden="true" className={cn("size-4", contrastRatio(color, "#ffffff") < 4.5 ? "text-canvas" : "text-ink")} />
+          ) : (
+            <span className="grid size-4 place-items-center rounded-full bg-canvas">
+              <Plus aria-hidden="true" className="size-3 text-ink" />
+            </span>
+          )}
+        </span>
+      </PopoverTrigger>
+      <PopoverContent className="w-72" aria-label="Escolher cor">
+        <ColorPicker
+          value={projectColorHex(color)}
+          // Voltar ao valor de abertura restaura a própria cor da paleta, não um hex igual a ela.
+          onChange={(hex) => onChange(hex === projectColorHex(colorAtOpen) ? colorAtOpen : (hex as ProjectColor))}
+        />
+        <PopoverClose asChild>
+          <Button variant="secondary" className="mt-3 w-full">
+            Pronto
+          </Button>
+        </PopoverClose>
+      </PopoverContent>
+    </Popover>
   );
 }
 
@@ -105,10 +156,7 @@ function ProjectForm({
                 aria-label={PROJECT_COLOR_LABELS[option]}
                 title={PROJECT_COLOR_LABELS[option]}
                 onClick={() => setColor(option)}
-                className={cn(
-                  "focus-ring grid size-10 place-items-center rounded-full border-2 transition-[border-color,transform] duration-120 hover:scale-105",
-                  selected ? "border-ink" : "border-transparent",
-                )}
+                className={cn(SWATCH, selected ? "border-ink" : "border-transparent")}
               >
                 <span className="grid size-7 place-items-center rounded-full" style={{ backgroundColor: PROJECT_COLOR[option] }}>
                   {selected && <Check aria-hidden="true" className="size-4 text-canvas" />}
@@ -116,6 +164,7 @@ function ProjectForm({
               </button>
             );
           })}
+          <CustomColorButton color={color} onChange={setColor} />
         </div>
       </fieldset>
 
