@@ -14,6 +14,7 @@ import { useReviewReminder } from "@/hooks/use-review-reminder";
 import { isSupabaseConfigured } from "@/lib/supabase/client";
 import { useUiStore } from "@/store/ui-store";
 
+import { AppBackdrop } from "./app-backdrop";
 import { CommandPalette } from "./command-palette";
 import { MobileNav } from "./mobile-nav";
 import { Sidebar } from "./sidebar";
@@ -55,6 +56,7 @@ function AuthenticatedShell({ userId, children }: { userId: string; children: Re
 
   return (
     <>
+      <AppBackdrop />
       <a
         href="#conteudo"
         className="focus-ring sr-only z-[70] rounded-control bg-primary px-3 py-2 text-compact font-medium text-on-primary focus:not-sr-only focus:fixed focus:top-3 focus:left-3"

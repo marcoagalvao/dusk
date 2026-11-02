@@ -63,7 +63,7 @@ export function MobileNav({ className }: { className?: string }) {
               type="button"
               aria-label="Nova tarefa"
               onClick={() => openQuickCreate()}
-              className="focus-ring grid size-12 place-items-center rounded-full bg-primary text-on-primary shadow-float transition-transform duration-120 active:scale-95"
+              className="dusk-action focus-ring grid size-12 place-items-center rounded-full bg-primary text-on-primary shadow-float active:scale-95"
             >
               <Plus aria-hidden="true" className="size-6" />
             </button>
