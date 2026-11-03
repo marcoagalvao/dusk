@@ -429,3 +429,17 @@ Supabase Edge Functions (mais uma plataforma para implantar) e notificações lo
 
 **Escolha:**
 A seleção guarda ids, mas as ações usam a interseção com as tarefas visíveis. Filtrar depois de selecionar não permite arquivar ou concluir algo que o usuário não está vendo. Tarefas arquivadas, que só aparecem em recortes do relatório, não podem ser selecionadas.
+
+## Cenas animadas só na entrada
+
+**Contexto:**
+A primeira versão do login e do fundo do app tinha animações em loop (céu, brilho, estrelas e reflexo) e um painel com `backdrop-filter`. Cada loop obrigava a placa de vídeo a redesenhar a tela inteira sem parar, cerca de 100 quadros por segundo com a página parada, e o desfoque era refeito a cada quadro. Com outro vídeo aberto em um segundo monitor, os dois travavam.
+
+**Escolha:**
+Em `login-view.css` e `app-backdrop.css`, as animações acontecem uma vez, na entrada, e terminam em poucos segundos. Fica em loop só o que mostra o envio do login, enquanto ele acontece. Sem `backdrop-filter` em cima de algo animado, e o grão entra como camada de fundo dos próprios elementos, sem uma camada de tela cheia a mais.
+
+**Como conferir:**
+Em uma página parada, `document.getAnimations().filter(a => a.playState === "running")` deve voltar vazio.
+
+**Descartado:**
+Manter os loops com animações mais lentas. O custo vem de redesenhar a tela inteira, não da velocidade.

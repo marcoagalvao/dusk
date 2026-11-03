@@ -6,7 +6,6 @@ export function AppBackdrop() {
       <div className="app-backdrop-stars" />
       <div className="app-backdrop-stars app-backdrop-stars-late" />
       <div className="app-backdrop-sun" />
-      <div className="app-backdrop-grain" />
     </div>
   );
 }

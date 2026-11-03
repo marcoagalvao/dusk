@@ -5,6 +5,11 @@
  *
  * O estado final de tudo é o estilo base: as entradas só têm `from`, então sem
  * animação (movimento reduzido) a cena aparece pronta.
+ *
+ * Desempenho: depois da entrada a cena para. Nada fica em loop infinito (cada loop
+ * obriga a placa de vídeo a redesenhar a tela inteira o tempo todo) e não há
+ * backdrop-filter, que refaz o desfoque a cada quadro. O grão vai como camada de
+ * fundo dos próprios elementos, sem uma camada de tela cheia a mais.
  */
 .login {
   --horizon: clamp(232px, 40svh, 340px);
@@ -14,6 +19,7 @@
   --peach: var(--color-project-peach);
   --lavender: var(--color-primary);
   --periwinkle: var(--color-project-periwinkle);
+  --noise: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.05'/%3E%3C/svg%3E");
 
   position: relative;
   isolation: isolate;
@@ -55,7 +61,6 @@
   animation: login-fade 1400ms var(--ease-dusk) both;
 }
 
-/* A faixa é mais alta que o céu e desliza devagar: as cores mudam sem repintar. */
 .login-sky-bands {
   position: absolute;
   inset: 0 0 auto;
@@ -71,8 +76,6 @@
     var(--peach) 76%,
     var(--peach) 100%
   );
-  animation: login-sky-drift 38s ease-in-out infinite alternate;
-  will-change: transform;
 }
 
 /* Manchas de luz que quebram a uniformidade do degradê. */
@@ -80,10 +83,9 @@
   position: absolute;
   inset: -20% -10%;
   background-image:
+    var(--noise),
     radial-gradient(44% 56% at 82% 64%, color-mix(in oklab, var(--periwinkle) 70%, transparent), transparent 72%),
     radial-gradient(38% 50% at 8% 74%, color-mix(in oklab, var(--rose) 72%, transparent), transparent 74%);
-  animation: login-glow-drift 26s ease-in-out infinite alternate;
-  will-change: transform;
 }
 
 /* Primeiras estrelas, só na parte escura do céu. */
@@ -101,7 +103,7 @@
     radial-gradient(1.5px 1.5px at 62% 18%, var(--color-ink), transparent),
     radial-gradient(1px 1px at 74% 52%, var(--color-ink), transparent),
     radial-gradient(1.5px 1.5px at 91% 30%, var(--color-ink), transparent);
-  animation: login-twinkle 5s ease-in-out infinite alternate;
+  animation: login-twinkle 2400ms ease-in-out 1200ms 3 alternate both;
 }
 
 .login-stars-late {
@@ -113,8 +115,8 @@
     radial-gradient(1px 1px at 68% 34%, var(--color-ink), transparent),
     radial-gradient(1px 1px at 84% 12%, var(--color-ink), transparent),
     radial-gradient(1.5px 1.5px at 96% 56%, var(--color-ink), transparent);
-  animation-duration: 7s;
-  animation-delay: -3s;
+  animation-duration: 3s;
+  animation-delay: 1800ms;
 }
 
 /* Sol: o invólucro responde ao envio e o disco cuida da entrada. --------- */
@@ -159,9 +161,7 @@
   inset: -34%;
   border-radius: 50%;
   background-image: radial-gradient(closest-side, color-mix(in oklab, var(--color-ink) 62%, transparent) 52%, transparent);
-  animation:
-    login-fade 2200ms var(--ease-dusk) both,
-    login-halo 9s ease-in-out 2200ms infinite alternate;
+  animation: login-fade 2200ms var(--ease-dusk) both;
 }
 
 /* Horizonte -------------------------------------------------------------- */
@@ -197,7 +197,7 @@
   position: absolute;
   inset: var(--horizon) 0 0;
   overflow: hidden;
-  background-image: linear-gradient(
+  background-image: var(--noise), linear-gradient(
     to bottom,
     color-mix(in oklab, var(--color-canvas) 70%, var(--rose)) 0,
     color-mix(in oklab, var(--color-canvas) 90%, var(--lavender)) 150px,
@@ -220,14 +220,12 @@
   );
   mask-image: radial-gradient(50% 100% at 50% 0, black 12%, transparent 100%);
   opacity: 0.42;
-  animation: login-shimmer 6s ease-in-out infinite alternate;
 }
 
 .login-reflection-offset {
   top: 7px;
   opacity: 0.28;
-  animation-duration: 8s;
-  animation-direction: alternate-reverse;
+  transform: translateX(10px) scaleX(0.94);
 }
 
 @media (min-width: 1024px) {
@@ -237,14 +235,6 @@
     height: min(38svh, 420px);
     margin-left: calc(clamp(280px, 28vw, 560px) / -2);
   }
-}
-
-/* Grão fixo: evita faixas visíveis nos degradês escuros. */
-.login-grain {
-  position: absolute;
-  inset: 0;
-  opacity: 0.045;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
 }
 
 /* Nome do app, em silhueta sobre o horizonte ----------------------------- */
@@ -308,8 +298,7 @@
     max-width: none;
     padding: 32px;
     border-radius: var(--radius-modal);
-    background-color: color-mix(in srgb, var(--color-canvas) 80%, transparent);
-    backdrop-filter: blur(28px) saturate(140%);
+    background-color: color-mix(in srgb, var(--color-canvas) 90%, transparent);
     box-shadow:
       inset 0 0 0 1px color-mix(in srgb, var(--color-ink) 12%, transparent),
       0 32px 64px -28px color-mix(in srgb, var(--color-canvas) 86%, var(--lavender));
@@ -322,13 +311,6 @@
     inset: 0 24px auto;
     height: 1px;
     background-image: linear-gradient(to right, transparent, var(--lavender), var(--rose), var(--peach), transparent);
-  }
-}
-
-@media (min-width: 1024px) and (prefers-reduced-transparency: reduce) {
-  .login-panel {
-    background-color: var(--color-canvas);
-    backdrop-filter: none;
   }
 }
 
@@ -410,25 +392,9 @@
   to { transform: translateX(340%); }
 }
 
-@keyframes login-sky-drift {
-  to { transform: translateY(-9%); }
-}
-
-@keyframes login-glow-drift {
-  to { transform: translate3d(-5%, 4%, 0); }
-}
-
 @keyframes login-twinkle {
   from { opacity: 0.25; }
   to { opacity: 0.95; }
-}
-
-@keyframes login-halo {
-  to { transform: scale(1.07); }
-}
-
-@keyframes login-shimmer {
-  to { transform: translateX(14px) scaleX(0.92); }
 }
 
 @keyframes login-shake {

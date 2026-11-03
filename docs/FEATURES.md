@@ -16,7 +16,7 @@ A interface usa sempre estas palavras, explicadas ao usuário em `/help` (Como f
 ## Conta e dados
 
 - Login por e-mail e senha, sem cadastro na interface. Um usuário por conta, com dados isolados por RLS.
-- A tela de login é uma cena de pôr do sol animada (`src/components/auth/login-view.css`). O sol desce enquanto o login é enviado e volta se falhar. Com "reduzir movimento" no sistema, a cena fica parada. O foco automático no e-mail só acontece com mouse ou trackpad, para o teclado do celular não cobrir a tela. A logo é `public/logo.png`. Os ícones são gerados a partir dela: `src/app/icon.png` (aba do navegador), `src/app/apple-icon.png` (iPhone) e `public/icon-192.png` e `public/icon-512.png` (app instalado e avisos). Ao trocar a logo, gere esses arquivos de novo.
+- A tela de login é uma cena de pôr do sol animada (`src/components/auth/login-view.css`). As animações acontecem só na abertura, e a cena fica parada poucos segundos depois. O sol desce enquanto o login é enviado e volta se falhar. Com "reduzir movimento" no sistema, nada se move. O foco automático no e-mail só acontece com mouse ou trackpad, para o teclado do celular não cobrir a tela. A logo é `public/logo.png`. Os ícones são gerados a partir dela: `src/app/icon.png` (aba do navegador), `src/app/apple-icon.png` (iPhone) e `public/icon-192.png` e `public/icon-512.png` (app instalado e avisos). Ao trocar a logo, gere esses arquivos de novo.
 - Dados no Supabase, disponíveis em qualquer dispositivo. Alterações sem conexão ficam numa fila e são enviadas depois.
 - Indicador de sincronização (`SyncBadge`): salvando, salvo ou sem conexão.
 - Na primeira entrada em cada navegador, os dados antigos do `localStorage` são levados para o banco, automaticamente e sem duplicar.
@@ -24,7 +24,7 @@ A interface usa sempre estas palavras, explicadas ao usuário em `/help` (Como f
 
 ## Aparência
 
-- Depois do login, todas as telas ficam sobre o mesmo fundo fixo (`AppBackdrop`): estrelas no alto e a luz do pôr do sol no pé da tela. Com "reduzir movimento" no sistema, o fundo fica parado.
+- Depois do login, todas as telas ficam sobre o mesmo fundo fixo (`AppBackdrop`): estrelas no alto e a luz do pôr do sol no pé da tela. Só a entrada é animada; depois o fundo fica parado. Com "reduzir movimento" no sistema, nada se move.
 - "Nova tarefa" no menu lateral e o botão + do celular usam o degradê da marca (`dusk-action`).
 
 ## Visão geral (`/`)
