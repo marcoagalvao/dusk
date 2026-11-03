@@ -4,6 +4,11 @@ Todas as mudanças relevantes do Dusk, da mais recente para a mais antiga. Forma
 
 Toda mudança entra aqui na mesma entrega, com a data. As regras estão em [`AGENTS.md`](AGENTS.md).
 
+## [1.5.1] - 2026-11-03
+
+### Corrigido
+- O login e o fundo do app deixavam o computador pesado: animações em loop faziam a tela inteira ser redesenhada sem parar, e o painel do login desfocava o fundo a cada quadro. Com outro vídeo aberto em um segundo monitor, ele chegava a travar. Agora as animações acontecem só na abertura, a cena fica parada depois disso e o painel deixou de desfocar o fundo. Parado, o navegador passou de cerca de 100 quadros por segundo para praticamente nenhum, no login e no app.
+
 ## [1.5.0] - 2026-11-02
 
 O app continua de onde a tela de login para: o sol acabou de se pôr.

@@ -61,7 +61,6 @@ export function LoginView() {
           <div className="login-reflection login-reflection-offset" />
         </div>
         <div className="login-horizon" />
-        <div className="login-grain" />
       </div>
 
       <h1 className="login-wordmark" aria-label="Dusk">

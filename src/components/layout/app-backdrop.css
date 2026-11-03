@@ -4,19 +4,23 @@
  * de propósito: atrás de listas e cartões, a leitura vem primeiro.
  *
  * O estado final é o estilo base; sem animação (movimento reduzido) o fundo fica parado.
+ *
+ * Desempenho: o fundo só anima na entrada e depois fica parado. Um loop aqui faria
+ * a placa de vídeo redesenhar a tela inteira o tempo todo, enquanto o app está aberto.
  */
 .app-backdrop {
   --rose: var(--color-project-rose);
   --peach: var(--color-project-peach);
   --lavender: var(--color-primary);
   --periwinkle: var(--color-project-periwinkle);
+  --noise: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.05'/%3E%3C/svg%3E");
 
   position: fixed;
   inset: 0;
   z-index: -1;
   overflow: hidden;
   pointer-events: none;
-  background-image: linear-gradient(
+  background-image: var(--noise), linear-gradient(
     to bottom,
     color-mix(in oklab, var(--color-canvas) 91%, var(--lavender)) 0,
     var(--color-canvas) 36%,
@@ -38,7 +42,6 @@
       transparent
     ),
     radial-gradient(42% 36% at 100% 0, color-mix(in srgb, var(--periwinkle) 10%, transparent), transparent);
-  animation: backdrop-breathe 24s ease-in-out infinite alternate;
 }
 
 /* O topo do sol, quase todo abaixo da borda da tela. */
@@ -70,8 +73,7 @@
     radial-gradient(1px 1px at 71% 14%, var(--color-ink), transparent),
     radial-gradient(1px 1px at 83% 40%, var(--color-ink), transparent),
     radial-gradient(1.5px 1.5px at 94% 10%, var(--color-ink), transparent);
-  opacity: 0.55;
-  animation: backdrop-twinkle 7s ease-in-out infinite alternate;
+  opacity: 0.45;
 }
 
 .app-backdrop-stars-late {
@@ -82,16 +84,7 @@
     radial-gradient(1px 1px at 66% 6%, var(--color-ink), transparent),
     radial-gradient(1px 1px at 78% 26%, var(--color-ink), transparent),
     radial-gradient(1px 1px at 90% 58%, var(--color-ink), transparent);
-  animation-duration: 10s;
-  animation-delay: -4s;
-}
-
-/* Grão fixo: evita faixas visíveis nos degradês escuros. */
-.app-backdrop-grain {
-  position: absolute;
-  inset: 0;
-  opacity: 0.035;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  opacity: 0.3;
 }
 
 /* A ação principal do app leva o mesmo degradê do botão Entrar. */
@@ -110,16 +103,6 @@
 
 @keyframes backdrop-sun-set {
   from { transform: translateY(-46%); opacity: 0; }
-}
-
-@keyframes backdrop-breathe {
-  from { opacity: 0.72; }
-  to { opacity: 1; }
-}
-
-@keyframes backdrop-twinkle {
-  from { opacity: 0.2; }
-  to { opacity: 0.7; }
 }
 
 @media (prefers-reduced-motion: reduce) {
